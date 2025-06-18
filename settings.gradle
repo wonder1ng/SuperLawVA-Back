@@ -1,0 +1,3 @@
+rootProject.name = "SuperLawVA"
+include("back")
+project(":back").projectDir = file("back")

@@ -1,0 +1,61 @@
+### Java ###
+*.class
+
+### Build ###
+.gradle/
+build/
+target/
+out/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IDEs ###
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Logs ###
+logs/
+*.log
+nohup.out
+
+### Dependency Caches ###
+/.mvn/
+.mvn/wrapper/maven-wrapper.jar
+
+### OS files ###
+.DS_Store
+Thumbs.db
+*.sw?
+*~
+
+### Secrets & Env ###
+.env
+.env.*
+*.pem
+ec2_key.pem
+
+### Output ###
+*.jar
+
+### Actions (optional but safe) ###
+.env.generated
