@@ -10,6 +10,7 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 !gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 ### IDEs ###
 .idea/
@@ -59,3 +60,11 @@ ec2_key.pem
 
 ### Actions (optional but safe) ###
 .env.generated
+
+/systemlog/
+/*.log
+
+*.tar
+
+# Local configuration
+/src/main/resources/application-local.yml

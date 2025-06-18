@@ -1,3 +1,8 @@
-rootProject.name = "SuperLawVA"
-include("back")
-project(":back").projectDir = file("back")
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'superlawva'
