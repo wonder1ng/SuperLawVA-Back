@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- 로그 경로 및 파일 이름 -->
-    <property name="LOG_PATH" value="back/logs" />
+    <!-- 로그 경로 및 파일 이름 (루트 경로의 systemlog 디렉토리) -->
+    <property name="LOG_PATH" value="systemlog" />
     <property name="LOG_FILE" value="${LOG_PATH}/system.log" />
 
     <!-- 콘솔 출력 -->
@@ -17,7 +17,7 @@
         <file>${LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/system-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>140</maxHistory> <!-- 최근 140일 보관 -->
+            <maxHistory>140</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
