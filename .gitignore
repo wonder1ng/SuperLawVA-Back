@@ -61,8 +61,8 @@ ec2_key.pem
 *.jar
 *.tar
 
-# Local configuration
-/src/main/resources/application-local.yml
-
 ### Actions ###
 .env.generated
+
+# Local configuration
+/src/main/resources/application-local.yml
