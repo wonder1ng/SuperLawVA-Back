@@ -1,10 +1,15 @@
 package com.superlawva.global.util;
 
+import com.superlawva.domain.user.entity.User;
+import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.security.annotation.LoginUser;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -16,11 +21,12 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     public boolean supportsParameter(MethodParameter param) {
-        return param.hasParameterAnnotation(LoginUser.class)
-                && param.getParameterType().equals(Long.class);
+        return param.hasParameterAnnotation(LoginUser.class) &&
+                (param.getParameterType().equals(User.class) || param.getParameterType().equals(Long.class));
     }
 
     @Override
@@ -29,12 +35,23 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest,
                                   org.springframework.web.bind.support.WebDataBinderFactory binder) {
 
-        HttpServletRequest req = (HttpServletRequest) webRequest.getNativeRequest();
-        String token = extractToken(req);
+        // ✅ SecurityContextHolder에서 email을 가져옴 (JwtAuthFilter에서 Principal로 email 설정했을 경우)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            String subject = jwtTokenProvider.getSubject(token);
-            return Long.parseLong(subject); // kakaoId나 userId
+        String email = (String) auth.getPrincipal();
+
+        // ✅ @LoginUser User
+        if (param.getParameterType().equals(User.class)) {
+            return userRepository.findByEmail(email).orElse(null);
+        }
+
+        // ✅ @LoginUser Long
+        if (param.getParameterType().equals(Long.class)) {
+            User user = userRepository.findByEmail(email).orElse(null);
+            return user != null ? user.getId() : null;
         }
 
         return null;

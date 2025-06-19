@@ -1,8 +1,9 @@
 package com.superlawva.global.security.util;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,23 +13,19 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey key;
-    private final long validityMs;
+    @Value("${jwt.secret}")
+    private String secret;
 
-    public JwtTokenProvider() {
-        Dotenv dotenv = Dotenv.configure()
-                .directory(System.getProperty("user.dir"))
-                .filename(".env")
-                .ignoreIfMalformed()
-                .ignoreIfMissing()
-                .load();
+    @Value("${jwt.access-token-validity:43200000}") // 기본 12시간
+    private long validityMs;
 
-        String secret = dotenv.get("JWT_SECRET");
+    private SecretKey key;
+
+    @PostConstruct
+    public void initialize() {
         if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException("JWT_SECRET is missing in .env.local");
+            throw new IllegalStateException("❌ jwt.secret is missing. Check environment variables or .env file.");
         }
-
-        this.validityMs = Long.parseLong(dotenv.get("JWT_ACCESS_TOKEN_VALIDITY", "43200000")); // 기본 12시간
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

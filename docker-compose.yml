@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: superlawva
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # 데이터베이스 설정
+      DATABASE_URL: jdbc:mysql://db:3306/superlawva
+      DB_USERNAME: root
+      DB_PASSWORD: password
+
+      # Redis 설정
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # JWT 설정
+      JWT_SECRET: your_very_secure_jwt_secret_key_here_min_32_chars
+      JWT_ACCESS_TOKEN_VALIDITY: 43200000
+
+      # 메일 설정
+      MAIL_USERNAME: your-email@gmail.com
+      MAIL_PASSWORD: your-app-password
+
+      # OAuth 설정
+      KAKAO_CLIENT_ID: kakao_client_id
+      KAKAO_CLIENT_SECRET: kakao_client_secret
+      NAVER_CLIENT_ID: naver_client_id
+      NAVER_CLIENT_SECRET: naver_client_secret
+
+      # 기타 설정
+      FRONTEND_URL: http://localhost:3000
+      SERVER_PORT: 8080
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

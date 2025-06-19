@@ -1,0 +1,58 @@
+# === Java ===
+*.class
+
+# === Build (Gradle/Maven) ===
+.gradle/
+target/
+out/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# === IDE ===
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.factorypath
+.settings/
+.springBeans
+.sts4-cache
+
+# === VSCode ===
+.vscode/
+
+# === Logs ===
+logs/
+*.log
+nohup.out
+/systemlog/
+*.log
+
+# === NetBeans ===
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# === Maven ===
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+
+# === OS ===
+.DS_Store
+Thumbs.db
+*.sw?
+*~
+
+# === Secrets ===
+*.pem
+ec2_key.pem
+
+# === CI/CD artifacts ===
+.env.generated
+

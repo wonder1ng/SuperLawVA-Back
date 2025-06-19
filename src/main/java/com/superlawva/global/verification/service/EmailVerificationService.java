@@ -1,6 +1,7 @@
 package com.superlawva.global.verification.service;
 
 import com.superlawva.global.mail.MailService;
+import com.superlawva.global.security.util.AESUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +16,7 @@ public class EmailVerificationService {
 
     private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final AESUtil aesUtil;
 
     @Value("${frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -23,8 +25,9 @@ public class EmailVerificationService {
         String code = generate6DigitCode();
         String key = "email:verify:" + email;
 
-        // 1. Redis에 인증번호 저장 (30분 유효)
-        redisTemplate.opsForValue().set(key, code, Duration.ofMinutes(30));
+        // 1. AES로 인증번호 암호화 후 Redis에 저장 (30분 유효)
+        String encryptedCode = aesUtil.encrypt(code);
+        redisTemplate.opsForValue().set(key, encryptedCode, Duration.ofMinutes(30));
 
         // 2. HTML 형식 메일 본문 작성
         String subject = "이메일 인증번호";
@@ -39,30 +42,58 @@ public class EmailVerificationService {
 
     public boolean verifyToken(String email, String code) {
         String key = "email:verify:" + email;
-        String storedCode = redisTemplate.opsForValue().get(key);
+        String encryptedStoredCode = redisTemplate.opsForValue().get(key);
 
-        if (storedCode != null && storedCode.equals(code)) {
-            redisTemplate.delete(key);
-            return true;
+        if (encryptedStoredCode != null) {
+            try {
+                // AES 복호화하여 비교
+                String storedCode = aesUtil.decrypt(encryptedStoredCode);
+                if (storedCode.equals(code)) {
+                    redisTemplate.delete(key);
+                    return true;
+                }
+            } catch (Exception e) {
+                return false; // 복호화 실패
+            }
         }
         return false;
     }
 
+    /**
+     * 보안 인증 토큰 생성 (이메일 링크 인증용)
+     * @param email 사용자 이메일
+     * @return 암호화된 토큰
+     */
+    public String generateSecureVerificationToken(String email) {
+        return aesUtil.generateSecureToken(email);
+    }
+
+    /**
+     * 보안 토큰 검증
+     * @param token 검증할 토큰
+     * @param email 예상되는 이메일
+     * @return 토큰 유효성
+     */
+    public boolean verifySecureToken(String token, String email) {
+        try {
+            String extractedEmail = aesUtil.extractDataFromToken(token);
+            boolean isValidTime = aesUtil.isTokenValid(token, Duration.ofHours(24).toMillis()); // 24시간 유효
+            return email.equals(extractedEmail) && isValidTime;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String generate6DigitCode() {
         Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // 100000~999999
+        int code = 100000 + random.nextInt(900000); // 6자리 숫자
         return String.valueOf(code);
     }
 
     private String makeMessageForm(String value, String purpose) {
-        StringBuilder message = new StringBuilder();
-        message
-                .append("<h1 style='text-align: center;'>[SuperLawVA]</h1>")
-                .append("<h3 style='text-align: center;'>")
-                .append(purpose)
-                .append(" : <strong style='font-size: 32px; letter-spacing: 8px;'>")
-                .append(value)
-                .append("</strong></h3>");
-        return message.toString();
+        return "<h1 style='text-align: center;'>[SuperLawVA]</h1>" +
+                "<h3 style='text-align: center;'>" + purpose +
+                " : <strong style='font-size: 32px; letter-spacing: 8px;'>" +
+                value + "</strong></h3>";
     }
 }
