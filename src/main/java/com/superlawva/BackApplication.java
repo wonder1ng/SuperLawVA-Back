@@ -38,6 +38,8 @@ public class BackApplication {
         env.put("jwt.secret", getEnv("JWT_SECRET", dotenv));
         env.put("jwt.access-token-validity", getEnv("JWT_ACCESS_TOKEN_VALIDITY", dotenv));
 
+        env.put("aes.secret-key", getEnv("AES_SECRET_KEY", dotenv));
+
         env.put("frontend.url", getEnv("FRONTEND_URL", dotenv));
         env.put("server.port", getEnv("SERVER_PORT", dotenv));
 

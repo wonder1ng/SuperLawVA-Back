@@ -147,7 +147,17 @@ jobs:
           REMOTE
 
           scp -C -i ec2_key.pem -o StrictHostKeyChecking=no deploy_script.sh ubuntu@$EC2_HOST:/home/ubuntu/
-          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
-            chmod +x /home/ubuntu/deploy_script.sh
-            /home/ubuntu/deploy_script.sh
-          '
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST \
+            "chmod +x /home/ubuntu/deploy_script.sh && \
+             DATABASE_URL='$DATABASE_URL' \
+             DB_USERNAME='$DB_USERNAME' \
+             DB_PASSWORD='$DB_PASSWORD' \
+             MAIL_USERNAME='$MAIL_USERNAME' \
+             MAIL_PASSWORD='$MAIL_PASSWORD' \
+             KAKAO_CLIENT_ID='$KAKAO_CLIENT_ID' \
+             KAKAO_CLIENT_SECRET='$KAKAO_CLIENT_SECRET' \
+             NAVER_CLIENT_ID='$NAVER_CLIENT_ID' \
+             NAVER_CLIENT_SECRET='$NAVER_CLIENT_SECRET' \
+             JWT_SECRET='$JWT_SECRET' \
+             AES_SECRET_KEY='$AES_SECRET_KEY' \
+             /home/ubuntu/deploy_script.sh"
