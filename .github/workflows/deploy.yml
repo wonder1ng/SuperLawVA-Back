@@ -93,8 +93,21 @@ jobs:
 
           echo "=== Redis 재시작 ==="
           cd /home/ubuntu
-          docker compose -f docker-compose.redis.yml down || true
-          docker compose -f docker-compose.redis.yml up -d
+          # Docker Compose 버전 확인 및 적절한 명령어 사용
+          if command -v docker-compose &> /dev/null; then
+            echo "docker-compose 사용"
+            docker-compose -f docker-compose.redis.yml down || true
+            docker-compose -f docker-compose.redis.yml up -d
+          elif docker compose version &> /dev/null; then
+            echo "docker compose 사용"
+            docker compose -f docker-compose.redis.yml down || true
+            docker compose -f docker-compose.redis.yml up -d
+          else
+            echo "Docker Compose를 찾을 수 없습니다. Redis 컨테이너를 직접 관리합니다."
+            docker stop redis-container 2>/dev/null || true
+            docker rm redis-container 2>/dev/null || true
+            docker run -d --name redis-container -p 6380:6379 redis:latest
+          fi
 
           echo "=== JAR 교체 ==="
           if [ -f /home/ubuntu/app.jar.new ]; then
@@ -123,26 +136,40 @@ jobs:
           # MySQL 클라이언트 설치 확인
           if ! command -v mysql &> /dev/null; then
             echo "MySQL 클라이언트를 설치합니다..."
-            sudo apt-get update && sudo apt-get install -y mysql-client
+            sudo apt-get update -qq && sudo apt-get install -y mysql-client-core-8.0 || {
+              echo "MySQL 클라이언트 설치 실패, 계속 진행합니다..."
+            }
           fi
 
           # DATABASE_URL에서 호스트, 포트, 데이터베이스 추출
-          DB_HOST=$(echo $DATABASE_URL | sed -n 's|.*//\([^:/]*\)[:/].*|\1|p')
-          DB_PORT=$(echo $DATABASE_URL | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
-          DB_NAME=$(echo $DATABASE_URL | sed -n 's|.*/\([^?]*\).*|\1|p')
+          if [[ "$DATABASE_URL" =~ jdbc:mysql://([^:/]+)(:([0-9]+))?/([^?]+) ]]; then
+            DB_HOST="${BASH_REMATCH[1]}"
+            DB_PORT="${BASH_REMATCH[3]:-3306}"
+            DB_NAME="${BASH_REMATCH[4]}"
+          else
+            echo "DATABASE_URL 파싱 실패: $DATABASE_URL"
+            DB_HOST="unknown"
+            DB_PORT="3306"
+            DB_NAME="unknown"
+          fi
 
           echo "연결 정보:"
           echo "  호스트: $DB_HOST"
-          echo "  포트: ${DB_PORT:-3306}"
+          echo "  포트: $DB_PORT"
           echo "  데이터베이스: $DB_NAME"
           echo "  사용자: $DB_USERNAME"
 
-          # MySQL 연결 테스트
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1" 2>&1 | head -20 || {
-            echo "❌ MySQL 연결 실패"
-            echo "EC2 인스턴스 IP 확인:"
-            curl -s http://169.254.169.254/latest/meta-data/local-ipv4 || echo "IP 확인 실패"
-          }
+          # MySQL 연결 테스트 (선택적)
+          if command -v mysql &> /dev/null; then
+            echo "MySQL 연결 테스트 시도..."
+            timeout 10 mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1 as test;" 2>&1 | head -10 || {
+              echo "❌ MySQL 연결 실패 - 애플리케이션에서 재시도합니다"
+              echo "EC2 인스턴스 IP:"
+              curl -s http://169.254.169.254/latest/meta-data/local-ipv4 2>/dev/null || echo "IP 확인 실패"
+            }
+          else
+            echo "MySQL 클라이언트가 없어 연결 테스트를 건너뜁니다"
+          fi
 
           echo "=== 애플리케이션 실행 ==="
           nohup java -jar \
