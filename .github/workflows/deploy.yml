@@ -3,7 +3,7 @@ name: Deploy Spring Boot to EC2
 
 on:
   push:
-    branches: [develop, "feat/deploy/docker"]
+    branches: [develop]
 
 jobs:
   deploy:
@@ -183,3 +183,14 @@ jobs:
              JWT_SECRET='$JWT_SECRET' \
              AES_SECRET_KEY='$AES_SECRET_KEY' \
              /home/ubuntu/deploy_script.sh"
+
+          # 애플리케이션 상태 확인
+          echo "--- 애플리케이션 상태 확인 ---"
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
+            echo "=== 프로세스 확인 ==="
+            ps aux | grep java
+            echo "=== 포트 확인 ==="
+            sudo netstat -tlnp | grep 8080 || echo "8080 포트가 열려있지 않습니다"
+            echo "=== 최근 로그 (마지막 20줄) ==="
+            tail -n 20 /home/ubuntu/log.txt
+          '
