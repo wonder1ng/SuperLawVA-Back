@@ -126,6 +126,7 @@ jobs:
           else
             echo "DATABASE_URL이 설정되지 않았습니다!"
           fi
+          echo "DB_USERNAME: $DB_USERNAME"
           echo "DB_USERNAME 길이: ${#DB_USERNAME}"
           echo "DB_PASSWORD 길이: ${#DB_PASSWORD}"
           echo "JWT_SECRET 길이: ${#JWT_SECRET}"
