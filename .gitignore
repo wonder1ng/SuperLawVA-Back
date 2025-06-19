@@ -38,6 +38,8 @@ bin/
 logs/
 *.log
 nohup.out
+/*.log
+/systemlog/
 
 ### Dependency Caches ###
 /.mvn/
@@ -57,14 +59,10 @@ ec2_key.pem
 
 ### Output ###
 *.jar
-
-### Actions (optional but safe) ###
-.env.generated
-
-/systemlog/
-/*.log
-
 *.tar
 
 # Local configuration
 /src/main/resources/application-local.yml
+
+### Actions ###
+.env.generated

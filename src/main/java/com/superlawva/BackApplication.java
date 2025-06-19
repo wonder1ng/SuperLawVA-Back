@@ -10,8 +10,7 @@ import java.util.Map;
 @SpringBootApplication
 public class BackApplication {
     public static void main(String[] args) {
-
-        // .env 파일 로드 (로컬 개발 환경)
+        // .env 파일 로드 (.env 또는 환경변수)
         Dotenv dotenv = Dotenv.configure()
                 .directory(System.getProperty("user.dir"))
                 .filename(".env")

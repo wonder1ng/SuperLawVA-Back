@@ -10,11 +10,11 @@ import java.util.Map;
 public interface UserService {
     List<UserResponseDTO> findAll();
     UserResponseDTO findById(Long id);
-    UserResponseDTO create(UserRequestDTO dto);      // ← create 메서드 시그니처
+    UserResponseDTO create(UserRequestDTO dto);
     UserResponseDTO update(Long id, UserRequestDTO dto);
     void delete(Long id);
-    UserResponseDTO getMyInfo(String email);
 
-    void processOAuth2User(String registrationId, Map<String,Object> attributes);
+    UserResponseDTO getMyInfo(String email);
     void changePassword(String email, PasswordChangeRequestDTO dto);
+    void processOAuth2User(String registrationId, Map<String,Object> attributes);
 }
