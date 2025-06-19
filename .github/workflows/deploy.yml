@@ -73,7 +73,7 @@ jobs:
           echo "--- Copying JAR (10 min timeout) ---"
           ls -lh build/libs/*-SNAPSHOT.jar
           timeout 600 scp -C -i ec2_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            build/libs/*-SNAPSHOT.jar ubuntu@$EC2_HOST:/home/ubuntu/ \
+            build/libs/*-SNAPSHOT.jar ubuntu@$EC2_HOST:/home/ubuntu/app.jar.new \
           || { echo "❌ JAR 전송 실패"; exit 1; }
 
           echo "--- Copying docker-compose file ---"
@@ -81,101 +81,116 @@ jobs:
             docker-compose.redis.yml ubuntu@$EC2_HOST:/home/ubuntu/
 
           echo "--- 원격 배포 스크립트 작성 ---"
-          cat > deploy_script.sh << 'REMOTE'
-          #!/usr/bin/env bash
+          cat << 'DEPLOY_SCRIPT' > deploy.sh
+          #!/bin/bash
           set -e
 
           echo "=== Java 설치 확인 ==="
-          if ! command -v java &>/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y openjdk-17-jre-headless
-          fi
+          java -version || { echo "Java가 설치되지 않았습니다"; exit 1; }
 
           echo "=== Docker 설치 확인 ==="
-          if ! command -v docker &>/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y docker.io curl net-tools
-            sudo systemctl enable --now docker
-            sudo usermod -aG docker ubuntu
-            sleep 5
-          fi
-
-          if ! command -v docker-compose &>/dev/null; then
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" \
-                 -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-            sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-          fi
+          docker --version || { echo "Docker가 설치되지 않았습니다"; exit 1; }
 
           echo "=== Redis 재시작 ==="
           cd /home/ubuntu
-          sudo docker-compose -f docker-compose.redis.yml down || true
-          sudo docker-compose -f docker-compose.redis.yml up -d
+          docker compose -f docker-compose.redis.yml down || true
+          docker compose -f docker-compose.redis.yml up -d
 
           echo "=== JAR 교체 ==="
-          JAR=$(ls /home/ubuntu/*-SNAPSHOT.jar | head -1)
-          [ -f "$JAR" ] && mv "$JAR" app.jar
+          if [ -f /home/ubuntu/app.jar.new ]; then
+            mv /home/ubuntu/app.jar.new /home/ubuntu/app.jar
+          else
+            # 새 JAR가 없으면 기존 *-SNAPSHOT.jar를 app.jar로 이름 변경
+            JAR=$(ls /home/ubuntu/*-SNAPSHOT.jar 2>/dev/null | head -1)
+            if [ -f "$JAR" ]; then
+              mv "$JAR" /home/ubuntu/app.jar
+            fi
+          fi
 
           echo "=== 기존 앱 중지 ==="
-          pkill -f 'java -jar' || true
+          pkill -f 'java.*app.jar' || true
+          sleep 2
 
-          # 환경변수 확인 (디버깅용)
           echo "=== 환경변수 확인 ==="
-          if [ -n "$DATABASE_URL" ]; then
-            echo "DATABASE_URL 형식 확인: ${DATABASE_URL:0:20}..."
-          else
-            echo "DATABASE_URL이 설정되지 않았습니다!"
-          fi
+          echo "DATABASE_URL 형식 확인: $(echo $DATABASE_URL | sed 's/\/\/.*@/\/\/***@/g')"
           echo "DB_USERNAME: $DB_USERNAME"
           echo "DB_USERNAME 길이: ${#DB_USERNAME}"
           echo "DB_PASSWORD 길이: ${#DB_PASSWORD}"
           echo "JWT_SECRET 길이: ${#JWT_SECRET}"
           echo "AES_SECRET_KEY 길이: ${#AES_SECRET_KEY}"
 
-          # DATABASE_URL이 비어있거나 올바르지 않으면 기본값 설정
-          if [ -z "$DATABASE_URL" ] || [[ ! "$DATABASE_URL" =~ ^jdbc:mysql:// ]]; then
-            DATABASE_URL="jdbc:mysql://superlawva-db.chg1ephxbhjv.ap-northeast-2.rds.amazonaws.com:3306/superlawva"
-            echo "DATABASE_URL을 기본값으로 설정: $DATABASE_URL"
+          echo "=== MySQL 연결 테스트 ==="
+          # MySQL 클라이언트 설치 확인
+          if ! command -v mysql &> /dev/null; then
+            echo "MySQL 클라이언트를 설치합니다..."
+            sudo apt-get update && sudo apt-get install -y mysql-client
           fi
 
-          # 환경변수 설정
-          export DATABASE_URL="$DATABASE_URL"
-          export DB_USERNAME="$DB_USERNAME"
-          export DB_PASSWORD="$DB_PASSWORD"
-          export MAIL_USERNAME="$MAIL_USERNAME"
-          export MAIL_PASSWORD="$MAIL_PASSWORD"
-          export KAKAO_CLIENT_ID="$KAKAO_CLIENT_ID"
-          export KAKAO_CLIENT_SECRET="$KAKAO_CLIENT_SECRET"
-          export NAVER_CLIENT_ID="$NAVER_CLIENT_ID"
-          export NAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET"
-          export JWT_SECRET="$JWT_SECRET"
-          export AES_SECRET_KEY="$AES_SECRET_KEY"
+          # DATABASE_URL에서 호스트, 포트, 데이터베이스 추출
+          DB_HOST=$(echo $DATABASE_URL | sed -n 's|.*//\([^:/]*\)[:/].*|\1|p')
+          DB_PORT=$(echo $DATABASE_URL | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+          DB_NAME=$(echo $DATABASE_URL | sed -n 's|.*/\([^?]*\).*|\1|p')
+
+          echo "연결 정보:"
+          echo "  호스트: $DB_HOST"
+          echo "  포트: ${DB_PORT:-3306}"
+          echo "  데이터베이스: $DB_NAME"
+          echo "  사용자: $DB_USERNAME"
+
+          # MySQL 연결 테스트
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1" 2>&1 | head -20 || {
+            echo "❌ MySQL 연결 실패"
+            echo "EC2 인스턴스 IP 확인:"
+            curl -s http://169.254.169.254/latest/meta-data/local-ipv4 || echo "IP 확인 실패"
+          }
 
           echo "=== 애플리케이션 실행 ==="
-          nohup java -jar app.jar \
-            -Xmx512m \
-            -Dspring.profiles.active=prod \
-            > log.txt 2>&1 &
+          nohup java -jar \
+            -DDATABASE_URL="$DATABASE_URL" \
+            -DDB_USERNAME="$DB_USERNAME" \
+            -DDB_PASSWORD="$DB_PASSWORD" \
+            -DJWT_SECRET="$JWT_SECRET" \
+            -DAES_SECRET_KEY="$AES_SECRET_KEY" \
+            -DMAIL_USERNAME="$MAIL_USERNAME" \
+            -DMAIL_PASSWORD="$MAIL_PASSWORD" \
+            -DKAKAO_CLIENT_ID="$KAKAO_CLIENT_ID" \
+            -DKAKAO_CLIENT_SECRET="$KAKAO_CLIENT_SECRET" \
+            -DNAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
+            -DNAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
+            /home/ubuntu/app.jar > /home/ubuntu/log.txt 2>&1 &
 
-          echo "PID: $!"
-          sleep 15
-          if pgrep -f 'java -jar'; then
-            echo "✅ 애플리케이션 기동 완료"
-          else
-            echo "❌ 애플리케이션 시작 실패"
-          fi
+          APP_PID=$!
+          echo "PID: $APP_PID"
 
-          # 로그 확인 (처음 50줄만)
-          echo "=== 애플리케이션 로그 (전체) ==="
-          cat log.txt || echo "로그 파일이 없습니다"
+          # 앱 시작 확인 (30초 대기)
+          for i in {1..30}; do
+            if ! ps -p $APP_PID > /dev/null; then
+              echo "❌ 애플리케이션 시작 실패"
+              echo "=== 애플리케이션 로그 (전체) ==="
+              cat /home/ubuntu/log.txt
+              exit 1
+            fi
+            
+            if curl -s http://localhost:8080/actuator/health > /dev/null; then
+              echo "✅ 애플리케이션 시작 성공!"
+              exit 0
+            fi
+            
+            echo "대기 중... ($i/30)"
+            sleep 1
+          done
+
+          echo "⚠️ 헬스체크 실패 - 로그 확인"
+          echo "=== 애플리케이션 로그 (마지막 50줄) ==="
+          tail -n 50 /home/ubuntu/log.txt
 
           echo "=== 프로세스 상태 확인 ==="
-          ps aux | grep java || echo "Java 프로세스가 실행되지 않습니다"
-          REMOTE
+          ps aux | grep java
+          DEPLOY_SCRIPT
 
-          scp -C -i ec2_key.pem -o StrictHostKeyChecking=no deploy_script.sh ubuntu@$EC2_HOST:/home/ubuntu/
+          scp -C -i ec2_key.pem -o StrictHostKeyChecking=no deploy.sh ubuntu@$EC2_HOST:/home/ubuntu/
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST \
-            "chmod +x /home/ubuntu/deploy_script.sh && \
+            "chmod +x /home/ubuntu/deploy.sh && \
              DATABASE_URL='$DATABASE_URL' \
              DB_USERNAME='$DB_USERNAME' \
              DB_PASSWORD='$DB_PASSWORD' \
@@ -187,7 +202,7 @@ jobs:
              NAVER_CLIENT_SECRET='$NAVER_CLIENT_SECRET' \
              JWT_SECRET='$JWT_SECRET' \
              AES_SECRET_KEY='$AES_SECRET_KEY' \
-             /home/ubuntu/deploy_script.sh"
+             /home/ubuntu/deploy.sh"
 
           # 애플리케이션 상태 확인
           echo "--- 애플리케이션 상태 확인 ---"
