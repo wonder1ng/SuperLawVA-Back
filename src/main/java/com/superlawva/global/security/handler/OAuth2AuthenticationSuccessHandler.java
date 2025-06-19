@@ -26,8 +26,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         // 토큰 생성
         String token = jwtProvider.createToken(email);
 
-        // 여기서 리다이렉트할 URL을 프론트엔드 주소로 바꾸세요.
-        String redirectUrl = "/login/success?token=" + token;
+        // 프론트엔드 URL로 리다이렉트 (환경변수로 설정 가능)
+        String frontendUrl = "http://localhost:3000"; // 개발용, 운영시에는 실제 도메인
+        String redirectUrl = frontendUrl + "/login/success?token=" + token;
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 }

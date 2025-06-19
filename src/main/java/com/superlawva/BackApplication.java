@@ -10,7 +10,7 @@ import java.util.Map;
 @SpringBootApplication
 public class BackApplication {
     public static void main(String[] args) {
-        // .env 파일 로드
+        // .env 파일 로드 (.env 또는 환경변수)
         Dotenv dotenv = Dotenv.configure()
                 .directory(System.getProperty("user.dir"))
                 .filename(".env")
@@ -18,38 +18,38 @@ public class BackApplication {
                 .ignoreIfMissing()
                 .load();
 
-        if (dotenv.get("DATABASE_URL") == null) {
-            throw new IllegalStateException(".env 파일이 제대로 로드되지 않았습니다.");
-        }
-
-        // Spring Boot에서 인식할 수 있는 프로퍼티로 매핑
+        // 운영: System.getenv(), 개발: dotenv.get() → 우선순위는 운영
         Map<String, Object> env = new HashMap<>();
-        env.put("spring.datasource.url", dotenv.get("DATABASE_URL"));
-        env.put("spring.datasource.username", dotenv.get("DB_USERNAME"));
-        env.put("spring.datasource.password", dotenv.get("DB_PASSWORD"));
-        env.put("spring.data.redis.host", dotenv.get("REDIS_HOST"));
-        env.put("spring.data.redis.port", dotenv.get("REDIS_PORT"));
+        env.put("spring.datasource.url", getEnv("DATABASE_URL", dotenv));
+        env.put("spring.datasource.username", getEnv("DB_USERNAME", dotenv));
+        env.put("spring.datasource.password", getEnv("DB_PASSWORD", dotenv));
 
-        env.put("spring.mail.username", dotenv.get("MAIL_USERNAME"));
-        env.put("spring.mail.password", dotenv.get("MAIL_PASSWORD"));
+        env.put("spring.data.redis.host", getEnv("REDIS_HOST", dotenv));
+        env.put("spring.data.redis.port", getEnv("REDIS_PORT", dotenv));
 
-        env.put("spring.security.oauth2.client.registration.kakao.client-id", dotenv.get("KAKAO_CLIENT_ID"));
-        env.put("spring.security.oauth2.client.registration.kakao.client-secret", dotenv.get("KAKAO_CLIENT_SECRET"));
-        env.put("spring.security.oauth2.client.registration.naver.client-id", dotenv.get("NAVER_CLIENT_ID"));
-        env.put("spring.security.oauth2.client.registration.naver.client-secret", dotenv.get("NAVER_CLIENT_SECRET"));
+        env.put("spring.mail.username", getEnv("MAIL_USERNAME", dotenv));
+        env.put("spring.mail.password", getEnv("MAIL_PASSWORD", dotenv));
 
-        env.put("jwt.secret", dotenv.get("JWT_SECRET"));
-        env.put("jwt.access-token-validity", dotenv.get("JWT_ACCESS_TOKEN_VALIDITY"));
+        env.put("spring.security.oauth2.client.registration.kakao.client-id", getEnv("KAKAO_CLIENT_ID", dotenv));
+        env.put("spring.security.oauth2.client.registration.kakao.client-secret", getEnv("KAKAO_CLIENT_SECRET", dotenv));
+        env.put("spring.security.oauth2.client.registration.naver.client-id", getEnv("NAVER_CLIENT_ID", dotenv));
+        env.put("spring.security.oauth2.client.registration.naver.client-secret", getEnv("NAVER_CLIENT_SECRET", dotenv));
 
-        env.put("frontend.url", dotenv.get("FRONTEND_URL"));
-        env.put("server.port", dotenv.get("SERVER_PORT", "8080"));
+        env.put("jwt.secret", getEnv("JWT_SECRET", dotenv));
+        env.put("jwt.access-token-validity", getEnv("JWT_ACCESS_TOKEN_VALIDITY", dotenv));
+
+        env.put("frontend.url", getEnv("FRONTEND_URL", dotenv));
+        env.put("server.port", getEnv("SERVER_PORT", dotenv));
 
         SpringApplication app = new SpringApplication(BackApplication.class);
         app.setDefaultProperties(env);
         app.run(args);
 
-        System.out.println("✅ Loaded DB URL: " + dotenv.get("DATABASE_URL"));
-
+        System.out.println("✅ Loaded DB URL: " + env.get("spring.datasource.url"));
     }
 
+    private static String getEnv(String key, Dotenv dotenv) {
+        String sysValue = System.getenv(key);
+        return (sysValue != null && !sysValue.isBlank()) ? sysValue : dotenv.get(key);
+    }
 }

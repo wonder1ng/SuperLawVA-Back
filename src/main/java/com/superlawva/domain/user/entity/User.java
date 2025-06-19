@@ -6,8 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users",
-        indexes = @Index(columnList = "kakaoId", unique = true))
+@Table(
+        name = "users",
+        indexes = @Index(columnList = "kakaoId", unique = true)
+)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -19,8 +21,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 소셜 로그인(카카오) 시에만 값 존재 */
     @Column(unique = true)
-    private Long kakaoId;             // 소셜 로그인 시에만 값 존재
+    private Long kakaoId;
 
     @Column(nullable = false)
     private String email;
@@ -31,21 +34,26 @@ public class User {
     @Column(nullable = false)
     private String nickname;
 
+    /** USER · ADMIN */
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Role role = Role.USER;
     public enum Role { USER, ADMIN }
 
+    /** 생성-수정 시각 */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
+    /** 이메일 인증 여부 */
     @Builder.Default
     @Column(nullable = false)
     private boolean emailVerified = false;
 
-    @PrePersist
+    /* ==================== JPA Life-cycle ==================== */
+
+       @PrePersist
     protected void prePersist() {
         this.createdAt = this.updatedAt = LocalDateTime.now();
     }
@@ -55,13 +63,20 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /* ==================== 도메인 로직 ==================== */
 
     public void changeEmail(String email) {
         this.email = email;
     }
+
+    public void changePassword(String password) {
+        this.password = password;
+    }
+
     public void changeNickname(String nickname) {
         if (nickname != null) {
             this.nickname = nickname;
         }
     }
 }
+

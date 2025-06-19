@@ -10,6 +10,7 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 !gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 ### IDEs ###
 .idea/
@@ -37,6 +38,8 @@ bin/
 logs/
 *.log
 nohup.out
+/*.log
+/systemlog/
 
 ### Dependency Caches ###
 /.mvn/
@@ -56,9 +59,10 @@ ec2_key.pem
 
 ### Output ###
 *.jar
+*.tar
 
-### Actions (optional but safe) ###
+### Actions ###
 .env.generated
 
-/systemlog/
-/*.log
+# Local configuration
+/src/main/resources/application-local.yml

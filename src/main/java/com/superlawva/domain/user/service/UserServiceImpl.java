@@ -1,5 +1,6 @@
 package com.superlawva.domain.user.service;
 
+import com.superlawva.domain.user.dto.PasswordChangeRequestDTO;
 import com.superlawva.domain.user.dto.UserRequestDTO;
 import com.superlawva.domain.user.dto.UserResponseDTO;
 import com.superlawva.domain.user.entity.User;
@@ -66,7 +67,31 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void processOAuth2User(String registrationId, Map<String,Object> attributes) {
+    public UserResponseDTO getMyInfo(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
+        return UserResponseDTO.from(user);
+    }
+
+    @Override
+    public void changePassword(String email, PasswordChangeRequestDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
+
+        if (user.getPassword() == null) {
+            throw new IllegalStateException("소셜 로그인을 통해 가입한 회원은 비밀번호를 변경할 수 없습니다.");
+        }
+
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("기존 비밀번호가 일치하지 않습니다.");
+        }
+
+        user.changePassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    @Override
+    public void processOAuth2User(String registrationId, Map<String, Object> attributes) {
         String email = (String) attributes.get("email");
         Optional<User> existing = userRepository.findByEmail(email);
         if (existing.isEmpty()) {
