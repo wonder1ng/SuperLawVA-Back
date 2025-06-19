@@ -115,8 +115,10 @@ jobs:
           [ -f "$JAR" ] && mv "$JAR" app.jar
 
           echo "=== 기존 앱 중지 ==="
-          pkill -f 'java -jar' || true
-          sleep 2
+          pkill -f 'java -jar'
+
+          # 올바른 DATABASE_URL 설정
+          export DATABASE_URL="jdbc:mysql://superlawva-db.chg1ephxbhjv.ap-northeast-2.rds.amazonaws.com:3306/superlawva"
 
           echo "=== 애플리케이션 실행 ==="
           nohup java -jar app.jar \
@@ -137,4 +139,7 @@ jobs:
           echo "PID: $!"
           sleep 10
           pgrep -f 'java -jar' && echo "✅ 애플리케이션 기동 완료"
+
+          # 로그 확인
+          tail -f log.txt
           REMOTE
