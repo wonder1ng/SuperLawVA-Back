@@ -4,18 +4,44 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
-      ddl-auto: update # 개발 초기에는 update, 안정화되면 validate 또는 none으로 변경 권장
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.MySQLDialect
+        connection.provider_disables_autocommit: true
+        jdbc.time_zone: UTC
+        hbm2ddl.auto: none
+    defer-datasource-initialization: true
+    open-in-view: false
+  sql:
+    init:
+      continue-on-error: true
+      mode: never
+  # 애플리케이션 시작 시 데이터베이스 연결 검증 비활성화
+  jmx:
+    enabled: false
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   mail:
     host: smtp.gmail.com
     port: 587
@@ -87,4 +113,3 @@ logging:
     com.superlawva: INFO
     org.springframework.security: WARN
     org.hibernate: WARN
- 

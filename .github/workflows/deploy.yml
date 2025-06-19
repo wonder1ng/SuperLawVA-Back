@@ -173,6 +173,8 @@ jobs:
 
           echo "=== 애플리케이션 실행 ==="
           nohup java -jar \
+            -Dspring.profiles.active=prod \
+            -Xmx512m -Xms256m \
             -DDATABASE_URL="$DATABASE_URL" \
             -DDB_USERNAME="$DB_USERNAME" \
             -DDB_PASSWORD="$DB_PASSWORD" \
@@ -184,6 +186,8 @@ jobs:
             -DKAKAO_CLIENT_SECRET="$KAKAO_CLIENT_SECRET" \
             -DNAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
             -DNAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
+            -DREDIS_HOST=localhost \
+            -DREDIS_PORT=6380 \
             /home/ubuntu/app.jar > /home/ubuntu/log.txt 2>&1 &
 
           APP_PID=$!
