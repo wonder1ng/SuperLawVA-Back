@@ -152,6 +152,7 @@ jobs:
 
           echo "=== 애플리케이션 실행 ==="
           nohup java -jar app.jar \
+            -Xmx512m \
             -Dspring.profiles.active=prod \
             > log.txt 2>&1 &
 
@@ -164,8 +165,11 @@ jobs:
           fi
 
           # 로그 확인 (처음 50줄만)
-          echo "=== 애플리케이션 로그 (처음 50줄) ==="
-          head -n 50 log.txt
+          echo "=== 애플리케이션 로그 (전체) ==="
+          cat log.txt || echo "로그 파일이 없습니다"
+
+          echo "=== 프로세스 상태 확인 ==="
+          ps aux | grep java || echo "Java 프로세스가 실행되지 않습니다"
           REMOTE
 
           scp -C -i ec2_key.pem -o StrictHostKeyChecking=no deploy_script.sh ubuntu@$EC2_HOST:/home/ubuntu/
