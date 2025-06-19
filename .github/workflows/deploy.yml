@@ -117,7 +117,7 @@ jobs:
           [ -f "$JAR" ] && mv "$JAR" app.jar
 
           echo "=== 기존 앱 중지 ==="
-          pkill -f 'java -jar'
+          pkill -f 'java -jar' || true
 
           # 올바른 DATABASE_URL 설정
           export DATABASE_URL="jdbc:mysql://superlawva-db.chg1ephxbhjv.ap-northeast-2.rds.amazonaws.com:3306/superlawva"
