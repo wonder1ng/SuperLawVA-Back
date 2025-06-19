@@ -25,10 +25,8 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter param) {
-        return param.hasParameterAnnotation(LoginUser.class) && (
-                param.getParameterType().equals(User.class) || 
-                param.getParameterType().equals(Long.class)
-        );
+        return param.hasParameterAnnotation(LoginUser.class) &&
+                (param.getParameterType().equals(User.class) || param.getParameterType().equals(Long.class));
     }
 
     @Override
@@ -37,20 +35,20 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest,
                                   org.springframework.web.bind.support.WebDataBinderFactory binder) {
 
-        // SecurityContext에서 email 가져오기 (JWT 필터에서 설정됨)
+        // ✅ SecurityContextHolder에서 email을 가져옴 (JwtAuthFilter에서 Principal로 email 설정했을 경우)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
             return null;
         }
 
         String email = (String) auth.getPrincipal();
-        
-        // User 타입 요청 시
+
+        // ✅ @LoginUser User
         if (param.getParameterType().equals(User.class)) {
             return userRepository.findByEmail(email).orElse(null);
         }
-        
-        // Long 타입 요청 시 (기존 호환성 유지)
+
+        // ✅ @LoginUser Long
         if (param.getParameterType().equals(Long.class)) {
             User user = userRepository.findByEmail(email).orElse(null);
             return user != null ? user.getId() : null;

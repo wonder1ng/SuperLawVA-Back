@@ -78,23 +78,20 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NoSuchElementException("회원을 찾을 수 없습니다."));
 
-        // 기존 비밀번호가 소셜 로그인 등으로 인해 없는 경우 처리
         if (user.getPassword() == null) {
             throw new IllegalStateException("소셜 로그인을 통해 가입한 회원은 비밀번호를 변경할 수 없습니다.");
         }
 
-        // 기존 비밀번호 확인
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new IllegalArgumentException("기존 비밀번호가 일치하지 않습니다.");
         }
 
-        // 새로운 비밀번호 암호화 및 저장
         user.changePassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
     }
 
     @Override
-    public void processOAuth2User(String registrationId, Map<String,Object> attributes) {
+    public void processOAuth2User(String registrationId, Map<String, Object> attributes) {
         String email = (String) attributes.get("email");
         Optional<User> existing = userRepository.findByEmail(email);
         if (existing.isEmpty()) {

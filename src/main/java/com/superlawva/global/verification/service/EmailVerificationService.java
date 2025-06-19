@@ -46,15 +46,14 @@ public class EmailVerificationService {
 
         if (encryptedStoredCode != null) {
             try {
-                // AES로 복호화하여 비교
+                // AES 복호화하여 비교
                 String storedCode = aesUtil.decrypt(encryptedStoredCode);
                 if (storedCode.equals(code)) {
                     redisTemplate.delete(key);
                     return true;
                 }
             } catch (Exception e) {
-                // 복호화 실패시 false 반환
-                return false;
+                return false; // 복호화 실패
             }
         }
         return false;
@@ -87,19 +86,14 @@ public class EmailVerificationService {
 
     private String generate6DigitCode() {
         Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // 100000~999999
+        int code = 100000 + random.nextInt(900000); // 6자리 숫자
         return String.valueOf(code);
     }
 
     private String makeMessageForm(String value, String purpose) {
-        StringBuilder message = new StringBuilder();
-        message
-                .append("<h1 style='text-align: center;'>[SuperLawVA]</h1>")
-                .append("<h3 style='text-align: center;'>")
-                .append(purpose)
-                .append(" : <strong style='font-size: 32px; letter-spacing: 8px;'>")
-                .append(value)
-                .append("</strong></h3>");
-        return message.toString();
+        return "<h1 style='text-align: center;'>[SuperLawVA]</h1>" +
+                "<h3 style='text-align: center;'>" + purpose +
+                " : <strong style='font-size: 32px; letter-spacing: 8px;'>" +
+                value + "</strong></h3>";
     }
 }

@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy Spring Boot to EC2
 
 on:
@@ -7,15 +8,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1) checkout
-      - uses: actions/checkout@v4
+      # 1) 소스 체크아웃
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-      # 2) JDK
-      - uses: actions/setup-java@v3
-        with: { distribution: temurin, java-version: "17" }
+      # 2) JDK 설치
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: "17"
 
-      # 3) Gradle cache
+      # 3) Gradle 캐시
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -26,20 +32,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # 4) build
+      # 4) 빌드 (테스트 스킵)
       - name: Build Spring Boot App
         run: |
           chmod +x ./gradlew
           ./gradlew clean bootJar -x test
 
-      # 5) SSH key
+      # 5) SSH 키 설정
       - name: Setup SSH key
         run: |
           echo "${{ secrets.EC2_KEY }}" > ec2_key.pem
           chmod 400 ec2_key.pem
           ssh-keygen -y -f ec2_key.pem >/dev/null && echo "✅ SSH key OK"
 
-      # 6) deploy
+      # 6) EC2 배포
       - name: Deploy and Run on EC2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -57,7 +63,6 @@ jobs:
         run: |
           set -e
 
-          ##### EC2 상태 점검 #####
           echo "--- EC2 상태 확인 ---"
           ssh -i ec2_key.pem -o StrictHostKeyChecking=no -o ConnectTimeout=30 ubuntu@$EC2_HOST '
             echo "Memory:" && free -h
@@ -65,7 +70,6 @@ jobs:
             echo "Load:"   && uptime
           ' || echo "EC2 상태 확인 실패 (무시)"
 
-          ##### 파일 복사 #####
           echo "--- Copying JAR (10 min timeout) ---"
           ls -lh build/libs/*-SNAPSHOT.jar
           timeout 600 scp -C -i ec2_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -76,17 +80,15 @@ jobs:
           timeout 60 scp -C -i ec2_key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             docker-compose.redis.yml ubuntu@$EC2_HOST:/home/ubuntu/
 
-          ##### 배포 스크립트 작성 #####
+          echo "--- 원격 배포 스크립트 작성 ---"
           cat > deploy_script.sh << 'REMOTE'
           #!/usr/bin/env bash
           set -e
 
           echo "=== Java 설치 확인 ==="
           if ! command -v java &>/dev/null; then
-            echo "Java가 없습니다. 설치 중..."
             sudo apt-get update
             sudo apt-get install -y openjdk-17-jre-headless
-            echo "Java 설치 완료"
           fi
 
           echo "=== Docker 설치 확인 ==="
@@ -143,3 +145,9 @@ jobs:
           # 로그 확인
           tail -f log.txt
           REMOTE
+
+          scp -C -i ec2_key.pem -o StrictHostKeyChecking=no deploy_script.sh ubuntu@$EC2_HOST:/home/ubuntu/
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST '
+            chmod +x /home/ubuntu/deploy_script.sh
+            /home/ubuntu/deploy_script.sh
+          '

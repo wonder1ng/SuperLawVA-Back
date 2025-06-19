@@ -2,12 +2,12 @@ package com.superlawva.domain.user.controller;
 
 import com.superlawva.domain.user.dto.UserRequestDTO;
 import com.superlawva.domain.user.dto.UserResponseDTO;
+import com.superlawva.domain.user.dto.PasswordChangeRequestDTO;
+import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.service.UserService;
 import com.superlawva.global.response.ApiResponse;
 import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.global.security.annotation.LoginUser;
-import com.superlawva.domain.user.dto.PasswordChangeRequestDTO;
-import com.superlawva.domain.user.entity.User;
 import com.superlawva.global.exception.BaseException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
