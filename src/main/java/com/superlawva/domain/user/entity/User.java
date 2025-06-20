@@ -28,7 +28,7 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true)  // 소셜 로그인 사용자는 password가 null일 수 있음
     private String password;
 
     @Column(nullable = false)

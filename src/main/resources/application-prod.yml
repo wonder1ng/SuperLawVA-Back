@@ -57,7 +57,7 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID}
             client-secret: ${KAKAO_CLIENT_SECRET}
-            redirect-uri: "http://52.79.231.75:8080/login/oauth2/code/kakao"
+            redirect-uri: "http://43.203.127.128:8080/login/oauth2/code/kakao"
             authorization-grant-type: authorization_code
             scope:
               - profile_nickname
@@ -65,7 +65,7 @@ spring:
           naver:
             client-id: ${NAVER_CLIENT_ID}
             client-secret: ${NAVER_CLIENT_SECRET}
-            redirect-uri: "http://52.79.231.75:8080/login/oauth2/code/naver"
+            redirect-uri: "http://43.203.127.128:8080/login/oauth2/code/naver"
             authorization-grant-type: authorization_code
             scope:
               - name
