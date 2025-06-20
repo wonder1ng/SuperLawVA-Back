@@ -42,6 +42,12 @@ public class UserServiceImpl implements UserService {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
+        
+        // 일반 회원가입 시 password 필수 검증
+        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+        }
+        
         User user = User.builder()
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
