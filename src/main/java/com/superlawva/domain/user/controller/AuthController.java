@@ -11,6 +11,7 @@ import com.superlawva.domain.user.dto.UserResponseDTO;
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.domain.user.service.UserService;
+import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.ApiResponse;
 import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
@@ -146,13 +147,21 @@ public class AuthController {
         )
     })
     public ApiResponse<String> signUp(@RequestBody @Valid UserRequestDTO request) {
-        log.info("🔥 >>> /auth/signup 컨트롤러 도달! email: {}", request.getEmail());
+        log.info("🔥 >>> /auth/signup 컨트롤러 도달!");
+        log.info("📝 요청 데이터 - email: {}, nickname: {}, password: {}", 
+                 request.getEmail(), 
+                 request.getNickname(), 
+                 request.getPassword() != null ? "[PROVIDED]" : "[NULL]");
+        
         try {
             userService.register(request);
             log.info("✅ 회원가입 성공: {}", request.getEmail());
             return ApiResponse.onSuccess("회원가입이 성공적으로 완료되었습니다.");
+        } catch (BaseException e) {
+            log.error("❌ 비즈니스 로직 오류 - 코드: {}, 메시지: {}", e.getErrorStatus().getCode(), e.getErrorStatus().getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("❌ 회원가입 실패: {}", e.getMessage(), e);
+            log.error("❌ 예상치 못한 회원가입 실패: {}", e.getMessage(), e);
             throw e;
         }
     }
