@@ -1,5 +1,6 @@
 package com.superlawva.domain.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "로그인 응답 DTO")
+@JsonInclude(JsonInclude.Include.NON_NULL)  // null 필드는 JSON에 포함하지 않음
 public class LoginResponseDTO {
 
     @Schema(description = "발급된 JWT Access Token", example = "eyJhbGciOiJIUzI1NiJ9...")
@@ -25,8 +27,8 @@ public class LoginResponseDTO {
     @Schema(description = "사용자 이메일", example = "test@example.com")
     private String email;
 
-    @Schema(description = "사용자 닉네임", example = "아무개")
-    private String nickname;
+    @Schema(description = "사용자 이름", example = "아무개")
+    private String userName;  // 필드명과 JSON 키 일치
 
     @Schema(description = "사용자 제공자", example = "Google")
     private String provider;
@@ -41,31 +43,32 @@ public class LoginResponseDTO {
     private List<RecentChat> recentChat;
 
 
-    @Getter
-    @Builder
     @Schema(description = "계약 정보")
-    public static class ContractInfo {
-        @JsonProperty("_id")
-        @Schema(description = "계약 ID", example = "asdasd")
-        private String _id;
-        @Schema(description = "계약명", example = "월세 임대차 계약서")
-        private String title;
-        @Schema(description = "계약 상태", example = "진행중")
-        private String state;
-        @Schema(description = "주소", example = "서울시 강남구 테헤란로 123")
-        private String address;
-        @Schema(description = "생성일", example = "2025.03.22")
-        private String createdAt;
-    }
+    public record ContractInfo(
+            @JsonProperty("_id")
+            @Schema(description = "계약 ID", example = "contract_123")
+            String id,
+            
+            @Schema(description = "계약명", example = "월세 임대차 계약서")
+            String title,
+            
+            @Schema(description = "계약 상태", example = "진행중")
+            String state,
+            
+            @Schema(description = "주소", example = "서울시 강남구 테헤란로 123")
+            String address,
+            
+            @Schema(description = "생성일", example = "2025.03.22")
+            String createdAt
+    ) {}
 
-    @Getter
-    @Builder
     @Schema(description = "최근 채팅 정보")
-    public static class RecentChat {
-        @JsonProperty("_id")
-        @Schema(description = "채팅방 ID", example = "1")
-        private String _id;
-        @Schema(description = "채팅방 제목", example = "집 주인이 보증금 안 돌려줘요.")
-        private String title;
-    }
+    public record RecentChat(
+            @JsonProperty("_id")
+            @Schema(description = "채팅방 ID", example = "chat_001")
+            String id,
+            
+            @Schema(description = "채팅방 제목", example = "집 주인이 보증금 안 돌려줘요.")
+            String title
+    ) {}
 } 

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class UserResponseDTO {
     private Long   id;
     private String email;
-    private String name;
+    private String userName;  // 프론트엔드 호환을 위해 userName으로 변경
     private User.Role role;
     private LocalDateTime createdAt;
     private boolean emailVerified;
@@ -21,7 +21,7 @@ public class UserResponseDTO {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .name(user.getName())
+                .userName(user.getNickname())  // nickname을 userName으로 매핑
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .emailVerified(user.isEmailVerified())
@@ -32,7 +32,7 @@ public class UserResponseDTO {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .name(user.getName())
+                .userName(user.getNickname())  // nickname을 userName으로 매핑
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .emailVerified(user.isEmailVerified())
@@ -44,6 +44,6 @@ public class UserResponseDTO {
     public static class MyPageDTO {
         private Long id;
         private String email;
-        private String name;
+        private String userName;  // 프론트엔드 호환을 위해 userName 사용
     }
 }

@@ -30,7 +30,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void register(UserRequestDTO userRequestDTO) {
-        log.info("🔍 회원가입 디버그 - name = {}, email = {}", userRequestDTO.getName(), userRequestDTO.getEmail());
+        log.info("🔍 회원가입 디버그 - nickname = {}, email = {}", userRequestDTO.getNickname(), userRequestDTO.getEmail());
         
         String emailHash = hashUtil.hash(userRequestDTO.getEmail());
         if (userRepository.existsByEmailHash(emailHash)) {
@@ -42,15 +42,15 @@ public class UserServiceImpl implements UserService {
                 .email(userRequestDTO.getEmail())
                 .emailHash(emailHash)
                 .password(hashedPassword)
-                .name(userRequestDTO.getName())
-                .nickname(userRequestDTO.getName())  // nickname을 name과 동일하게 설정
+                .name(userRequestDTO.getNickname())  // nickname을 name에도 설정
+                .nickname(userRequestDTO.getNickname())
                 .provider("LOCAL")
                 .role(User.Role.USER)
                 .build();
         userRepository.save(user);
     }
 
-    @Override
+        @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
         String emailHash = hashUtil.hash(loginRequestDTO.getEmail());
         User user = userRepository.findByEmailHash(emailHash)
@@ -59,39 +59,30 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
             throw new BaseException(ErrorStatus._PASSWORD_NOT_MATCH);
         }
-
-        String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
         
+        String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+
         // 프론트엔드 호환을 위한 목업 데이터 추가
         return LoginResponseDTO.builder()
                 .token(token)
                 .id(user.getId())
                 .email(user.getEmail())
-                .nickname(user.getName())
+                .userName(user.getNickname())  // 필드명 일치
                 .provider(user.getProvider())
                 .notification(List.of(0, 1, 2)) // 알림 목업 데이터
                 .contractArray(List.of(
-                    LoginResponseDTO.ContractInfo.builder()
-                        ._id("contract_" + user.getId())
-                        .title("월세 임대차 계약서")
-                        .state("진행중")
-                        .address("서울시 강남구 테헤란로 123")
-                        .createdAt("2025.03.22")
-                        .build()
+                    new LoginResponseDTO.ContractInfo(
+                        "contract_" + user.getId(),
+                        "월세 임대차 계약서",
+                        "진행중",
+                        "서울시 강남구 테헤란로 123",
+                        "2025.03.22"
+                    )
                 ))
                 .recentChat(List.of(
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("1")
-                        .title("집 주인이 보증금 안 돌려줘요.")
-                        .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("2")
-                        .title("전입 신고 방법 알려줘")
-                        .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("3")
-                        .title("묵시적 갱신이 뭔가요")
-                        .build()
+                    new LoginResponseDTO.RecentChat("chat_001", "집 주인이 보증금 안 돌려줘요."),
+                    new LoginResponseDTO.RecentChat("chat_002", "전입 신고 방법 알려줘"),
+                    new LoginResponseDTO.RecentChat("chat_003", "묵시적 갱신이 뭔가요")
                 ))
                 .build();
     }
@@ -107,6 +98,7 @@ public class UserServiceImpl implements UserService {
                             .email(kakaoLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
                             .name(kakaoLoginRequestDTO.getNickname())
+                            .nickname(kakaoLoginRequestDTO.getNickname())
                             .provider("KAKAO")
                             .role(User.Role.USER)
                             .emailVerified(true)
@@ -117,7 +109,7 @@ public class UserServiceImpl implements UserService {
         return LoginResponseDTO.builder()
                 .token(token)
                 .email(user.getEmail())
-                .nickname(user.getName())
+                .userName(user.getNickname())
                 .provider(user.getProvider())
                 .build();
     }
@@ -144,7 +136,7 @@ public class UserServiceImpl implements UserService {
         return LoginResponseDTO.builder()
                 .token(token)
                 .email(user.getEmail())
-                .nickname(user.getName())
+                .userName(user.getNickname())
                 .provider(user.getProvider())
                 .build();
     }
@@ -218,8 +210,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
         
-        if (dto.getName() != null) {
-            user.changeName(dto.getName());
+        if (dto.getNickname() != null) {
+            user.changeName(dto.getNickname());
         }
         if (dto.getEmail() != null) {
             user.changeEmail(dto.getEmail());
@@ -255,31 +247,22 @@ public class UserServiceImpl implements UserService {
                 .token("existing_token") // 기존 토큰 유지 (프론트에서 갱신하지 않을 경우)
                 .id(user.getId())
                 .email(user.getEmail())
-                .nickname(user.getName())
+                .userName(user.getNickname())  // 필드명 일치
                 .provider(user.getProvider())
                 .notification(List.of(0, 1, 2)) // 알림 목업 데이터
                 .contractArray(List.of(
-                    LoginResponseDTO.ContractInfo.builder()
-                        ._id("contract_" + user.getId())
-                        .title("월세 임대차 계약서")
-                        .state("진행중")
-                        .address("서울시 강남구 테헤란로 123")
-                        .createdAt("2025.03.22")
-                        .build()
+                    new LoginResponseDTO.ContractInfo(
+                        "contract_" + user.getId(),
+                        "월세 임대차 계약서",
+                        "진행중",
+                        "서울시 강남구 테헤란로 123",
+                        "2025.03.22"
+                    )
                 ))
                 .recentChat(List.of(
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("1")
-                        .title("집 주인이 보증금 안 돌려줘요.")
-                        .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("2")
-                        .title("전입 신고 방법 알려줘")
-                        .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                        ._id("3")
-                        .title("묵시적 갱신이 뭔가요")
-                        .build()
+                    new LoginResponseDTO.RecentChat("chat_001", "집 주인이 보증금 안 돌려줘요."),
+                    new LoginResponseDTO.RecentChat("chat_002", "전입 신고 방법 알려줘"),
+                    new LoginResponseDTO.RecentChat("chat_003", "묵시적 갱신이 뭔가요")
                 ))
                 .build();
     }
