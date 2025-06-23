@@ -83,7 +83,7 @@ jobs:
           echo "--- 원격 배포 스크립트 작성 ---"
           cat << 'DEPLOY_SCRIPT' > deploy.sh
           #!/bin/bash
-          set -e
+          set -ex
 
           echo "=== Java 설치 확인 ==="
           java -version || { echo "Java가 설치되지 않았습니다"; exit 1; }
@@ -188,7 +188,7 @@ jobs:
             -DNAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
             -DREDIS_HOST=localhost \
             -DREDIS_PORT=6380 \
-            /home/ubuntu/app.jar > /home/ubuntu/log.txt 2>&1 &
+            /home/ubuntu/app.jar >> /home/ubuntu/log.txt 2>&1 &
 
           APP_PID=$!
           echo "PID: $APP_PID"
