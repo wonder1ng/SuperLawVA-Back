@@ -28,11 +28,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void register(UserRequestDTO userRequestDTO) {
-        if (userRepository.existsByEmail(userRequestDTO.getEmail())) {
+        String emailHash = hashUtil.hash(userRequestDTO.getEmail());
+        if (userRepository.existsByEmailHash(emailHash)) {
             throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
         }
         String hashedPassword = passwordEncoder.encode(userRequestDTO.getPassword());
-        String emailHash = hashUtil.hash(userRequestDTO.getEmail());
         
         User user = User.builder()
                 .email(userRequestDTO.getEmail())

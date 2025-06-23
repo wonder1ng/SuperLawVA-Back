@@ -2,6 +2,7 @@ package com.superlawva.global.security.handler;
 
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final JwtTokenProvider jwtProvider;
     private final UserRepository userRepository;
+    private final HashUtil hashUtil;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -33,8 +35,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String registrationId = ((org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
 
         String email = extractEmail(registrationId, oauthUser);
-
-        User user = userRepository.findByEmail(email)
+        
+        String emailHash = hashUtil.hash(email);
+        User user = userRepository.findByEmailHash(emailHash)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         // 토큰 생성

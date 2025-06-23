@@ -2,6 +2,7 @@ package com.superlawva.global.security.handler;
 
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.*;
 import org.springframework.security.core.Authentication;
@@ -20,10 +21,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final HashUtil hashUtil;
 
-    public OAuth2LoginSuccessHandler(JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+    public OAuth2LoginSuccessHandler(JwtTokenProvider jwtTokenProvider, UserRepository userRepository, HashUtil hashUtil) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
+        this.hashUtil = hashUtil;
     }
 
     @Override
@@ -32,7 +35,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                                         Authentication auth) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) auth.getPrincipal();
         String email = (String) oAuth2User.getAttributes().get("email");
-        User user = userRepository.findByEmail(email)
+        String emailHash = hashUtil.hash(email);
+        User user = userRepository.findByEmailHash(emailHash)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         String token = jwtTokenProvider.createToken(email, user.getId());

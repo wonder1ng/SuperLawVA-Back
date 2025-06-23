@@ -2,6 +2,7 @@ package com.superlawva.global.verification.service;
 
 import com.superlawva.global.mail.MailService;
 import com.superlawva.global.security.util.AESUtil;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.domain.user.repository.UserRepository;
@@ -23,6 +24,7 @@ public class EmailVerificationService {
     private final RedisTemplate<String, String> redisTemplate;
     private final AESUtil aesUtil;
     private final UserRepository userRepository;
+    private final HashUtil hashUtil;
 
     @Value("${frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -105,7 +107,8 @@ public class EmailVerificationService {
 
     public void sendVerificationEmail(String email) {
         // 이미 가입된 이메일인지 확인
-        if (userRepository.existsByEmail(email)) {
+        String emailHash = hashUtil.hash(email);
+        if (userRepository.existsByEmailHash(emailHash)) {
             throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
         }
         sendVerification(email);

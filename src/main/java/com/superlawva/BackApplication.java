@@ -2,6 +2,7 @@ package com.superlawva;
 
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.security.util.HashUtil;
 import io.github.cdimascio.dotenv.Dotenv;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -30,15 +31,17 @@ public class BackApplication {
 
     @Bean
     @ConditionalOnProperty(name = "app.create-test-users", havingValue = "true", matchIfMissing = true)
-    public CommandLineRunner createTestUsers(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public CommandLineRunner createTestUsers(UserRepository userRepository, PasswordEncoder passwordEncoder, HashUtil hashUtil) {
         return args -> {
             try {
                 System.out.println("🚀 테스트 사용자 생성 시작...");
                 
                 // 테스트용 사용자가 없으면 생성
-                if (!userRepository.existsByEmail("test@example.com")) {
+                String testEmailHash = hashUtil.hash("test@example.com");
+                if (!userRepository.existsByEmailHash(testEmailHash)) {
                     User testUser = User.builder()
                             .email("test@example.com")
+                            .emailHash(testEmailHash)
                             .password(passwordEncoder.encode("password123"))
                             .name("테스트사용자")
                             .provider("LOCAL")
@@ -51,9 +54,11 @@ public class BackApplication {
                     System.out.println("ℹ️ 테스트 사용자 이미 존재: test@example.com");
                 }
 
-                if (!userRepository.existsByEmail("admin@example.com")) {
+                String adminEmailHash = hashUtil.hash("admin@example.com");
+                if (!userRepository.existsByEmailHash(adminEmailHash)) {
                     User adminUser = User.builder()
                             .email("admin@example.com")
+                            .emailHash(adminEmailHash)
                             .password(passwordEncoder.encode("admin123"))
                             .name("관리자")
                             .provider("LOCAL")
@@ -66,9 +71,11 @@ public class BackApplication {
                     System.out.println("ℹ️ 관리자 사용자 이미 존재: admin@example.com");
                 }
 
-                if (!userRepository.existsByEmail("demo@example.com")) {
+                String demoEmailHash = hashUtil.hash("demo@example.com");
+                if (!userRepository.existsByEmailHash(demoEmailHash)) {
                     User demoUser = User.builder()
                             .email("demo@example.com")
+                            .emailHash(demoEmailHash)
                             .password(passwordEncoder.encode("demo123"))
                             .name("데모사용자")
                             .provider("LOCAL")
