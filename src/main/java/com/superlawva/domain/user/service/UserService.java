@@ -21,6 +21,8 @@ public interface UserService {
 
     UserResponseDTO getMyInfo(Long userId);
     
+    LoginResponseDTO getUserDashboard(Long userId);
+    
     UserResponseDTO updateMyInfo(Long userId, UserRequestDTO.UpdateMyInfoDTO request);
     
     void deleteMyAccount(Long userId);

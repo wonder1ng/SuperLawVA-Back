@@ -2,6 +2,9 @@ package com.superlawva.global.verification.service;
 
 import com.superlawva.global.mail.MailService;
 import com.superlawva.global.security.util.AESUtil;
+import com.superlawva.global.exception.BaseException;
+import com.superlawva.global.response.status.ErrorStatus;
+import com.superlawva.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,6 +22,7 @@ public class EmailVerificationService {
     private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
     private final AESUtil aesUtil;
+    private final UserRepository userRepository;
 
     @Value("${frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -100,10 +104,30 @@ public class EmailVerificationService {
     }
 
     public void sendVerificationEmail(String email) {
-        // Implementation needed
+        // 이미 가입된 이메일인지 확인
+        if (userRepository.existsByEmail(email)) {
+            throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
+        }
+        sendVerification(email);
     }
 
     public void verifyEmail(EmailVerifyRequestDTO request) {
-        // Implementation needed
+        String key = "email:verify:" + request.getEmail();
+        String encryptedStoredCode = redisTemplate.opsForValue().get(key);
+        
+        if (encryptedStoredCode == null) {
+            throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_FOUND);
+        }
+        
+        try {
+            String storedCode = aesUtil.decrypt(encryptedStoredCode);
+            if (!storedCode.equals(request.getCode())) {
+                throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_MATCH);
+            }
+            // 인증 성공 시 Redis에서 삭제
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_MATCH);
+        }
     }
 }

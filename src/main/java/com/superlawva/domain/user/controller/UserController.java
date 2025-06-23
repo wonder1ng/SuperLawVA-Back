@@ -2,6 +2,7 @@ package com.superlawva.domain.user.controller;
 
 import com.superlawva.domain.user.dto.UserRequestDTO;
 import com.superlawva.domain.user.dto.UserResponseDTO;
+import com.superlawva.domain.user.dto.LoginResponseDTO;
 import com.superlawva.domain.user.dto.PasswordChangeRequestDTO;
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.service.UserService;
@@ -46,6 +47,20 @@ public class UserController {
             throw new BaseException(ErrorStatus._UNAUTHORIZED);
         }
         return ApiResponse.onSuccess(userService.getMyInfo(user.getId()));
+    }
+
+    @PostMapping("/dashboard")
+    @Operation(summary = "사용자 대시보드 정보 조회", description = "프론트엔드 호환을 위한 사용자 대시보드 정보를 조회합니다.")
+    @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "대시보드 정보 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+    })
+    public ApiResponse<LoginResponseDTO> getUserDashboard(@Parameter(hidden = true) @LoginUser User user) {
+        if (user == null) {
+            throw new BaseException(ErrorStatus._UNAUTHORIZED);
+        }
+        return ApiResponse.onSuccess(userService.getUserDashboard(user.getId()));
     }
 
     @PutMapping("/info")

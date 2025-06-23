@@ -4,6 +4,8 @@ import com.superlawva.domain.user.dto.KakaoLoginRequestDTO;
 import com.superlawva.domain.user.dto.LoginRequestDTO;
 import com.superlawva.domain.user.dto.LoginResponseDTO;
 import com.superlawva.domain.user.dto.NaverLoginRequestDTO;
+import com.superlawva.domain.user.dto.SocialLoginCompleteDTO;
+import com.superlawva.domain.user.dto.SocialLoginTempDTO;
 import com.superlawva.domain.user.dto.UserRequestDTO;
 import com.superlawva.domain.user.dto.UserResponseDTO;
 import com.superlawva.domain.user.entity.User;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -374,30 +377,46 @@ public class AuthController {
     @Operation(
         summary = "🔄 카카오 OAuth2 콜백 처리", 
         description = """
-        카카오 OAuth2 인증 후 콜백을 처리하고 JWT 토큰을 발급합니다.
+        카카오 OAuth2 인증 후 콜백을 처리합니다.
+        
+        **⚠️ 중요한 변경사항:**
+        카카오에서 이메일 정보를 제공하지 않는 경우가 많아서, 
+        이메일을 별도로 입력받는 2단계 프로세스로 변경되었습니다.
         
         **동작 과정:**
         1. 카카오에서 인가 코드(code)를 받습니다
         2. 인가 코드로 카카오 액세스 토큰을 요청합니다
         3. 액세스 토큰으로 카카오 사용자 정보를 조회합니다
-        4. 사용자 정보로 JWT 토큰을 생성하여 반환합니다
+        4-A. 이메일이 있는 경우: JWT 토큰을 바로 발급
+        4-B. 이메일이 없는 경우: 임시 토큰 발급 후 이메일 입력 대기
+        
+        **프론트엔드 처리 예시:**
+        ```javascript
+        // 콜백 응답 확인
+        if (response.result.needEmail) {
+            // 이메일 입력 화면으로 이동
+            showEmailInputForm(response.result.tempToken);
+        } else {
+            // 바로 로그인 완료
+            localStorage.setItem('token', response.result.token);
+            navigateToMain();
+        }
+        ```
         
         **주의사항:**
         - 이 API는 카카오에서 자동으로 호출됩니다
         - 프론트엔드에서 직접 호출하지 마세요
         - 콜백 URL은 카카오 개발자 콘솔에 등록된 URL과 일치해야 합니다
-        
-        **응답 데이터:**
-        일반 로그인과 동일한 LoginResponseDTO 형태로 JWT 토큰과 사용자 정보를 반환합니다.
         """
     )
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200", 
-            description = "✅ 카카오 로그인 성공",
+            description = "✅ 카카오 로그인 성공 (이메일 있는 경우)",
             content = @Content(
                 schema = @Schema(implementation = LoginResponseDTO.class),
                 examples = @ExampleObject(
+                    name = "이메일 제공된 경우",
                     value = """
                     {
                         "isSuccess": true,
@@ -408,6 +427,30 @@ public class AuthController {
                             "email": "user@kakao.com",
                             "nickname": "카카오사용자",
                             "provider": "KAKAO"
+                        }
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "202", 
+            description = "⏳ 이메일 입력 필요 (카카오에서 이메일 미제공)",
+            content = @Content(
+                schema = @Schema(implementation = SocialLoginTempDTO.class),
+                examples = @ExampleObject(
+                    name = "이메일 입력 필요",
+                    value = """
+                    {
+                        "isSuccess": true,
+                        "code": "202",
+                        "message": "이메일 입력이 필요합니다.",
+                        "result": {
+                            "tempToken": "temp_token_abc123",
+                            "nickname": "카카오사용자",
+                            "provider": "KAKAO",
+                            "needEmail": true,
+                            "message": "카카오에서 이메일 정보를 제공하지 않습니다. 이메일을 입력해주세요."
                         }
                     }
                     """
@@ -447,7 +490,7 @@ public class AuthController {
             )
         )
     })
-    public ApiResponse<LoginResponseDTO> kakaoCallback(@RequestParam String code) {
+    public ApiResponse<Object> kakaoCallback(@RequestParam String code) {
         // 1. 인가 코드로 액세스 토큰 요청
         String tokenUrl = "https://kauth.kakao.com/oauth/token";
         HttpHeaders tokenHeaders = new HttpHeaders();
@@ -475,27 +518,44 @@ public class AuthController {
         
         String email = (String) kakaoAccount.get("email");
         String nickname = (String) profile.get("nickname");
+        Long kakaoId = ((Number) userInfo.get("id")).longValue();
         
-        // 3. 사용자 정보로 JWT 토큰 생성
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .email(email)
-                        .name(nickname)
-                        .provider("KAKAO")
-                        .role(User.Role.USER)
-                        .emailVerified(true)
-                        .build()));
-        
-        String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
-        
-        LoginResponseDTO response = LoginResponseDTO.builder()
-                .token(jwtToken)
-                .email(user.getEmail())
-                .nickname(user.getName())
-                .provider(user.getProvider())
-                .build();
-        
-        return ApiResponse.onSuccess(response);
+        // 3. 이메일 여부에 따른 분기 처리
+        if (email == null || email.trim().isEmpty()) {
+            // 이메일이 없는 경우: 임시 토큰 발급
+            String tempToken = jwtTokenProvider.createTempToken(kakaoId.toString(), "KAKAO", nickname);
+            
+            SocialLoginTempDTO tempResponse = SocialLoginTempDTO.builder()
+                    .tempToken(tempToken)
+                    .nickname(nickname)
+                    .provider("KAKAO")
+                    .needEmail(true)
+                    .message("카카오에서 이메일 정보를 제공하지 않습니다. 이메일을 입력해주세요.")
+                    .build();
+            
+            return ApiResponse.onSuccess(tempResponse);
+        } else {
+            // 이메일이 있는 경우: 바로 로그인 처리
+            User user = userRepository.findByEmail(email)
+                    .orElseGet(() -> userRepository.save(User.builder()
+                            .email(email)
+                            .name(nickname)
+                            .provider("KAKAO")
+                            .role(User.Role.USER)
+                            .emailVerified(true)
+                            .build()));
+            
+            String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+            
+            LoginResponseDTO response = LoginResponseDTO.builder()
+                    .token(jwtToken)
+                    .email(user.getEmail())
+                    .nickname(user.getName())
+                    .provider(user.getProvider())
+                    .build();
+            
+            return ApiResponse.onSuccess(response);
+        }
     }
 
     @GetMapping("/oauth2/callback/naver")
@@ -820,5 +880,149 @@ public class AuthController {
     })
     public ApiResponse<LoginResponseDTO> naverLogin(@RequestBody @Valid NaverLoginRequestDTO request) {
         return ApiResponse.onSuccess(userService.naverLogin(request));
+    }
+
+    @PostMapping("/social/complete")
+    @Operation(
+        summary = "✅ 소셜 로그인 완료 (이메일 입력)", 
+        description = """
+        소셜 로그인에서 이메일 정보가 제공되지 않은 경우, 사용자가 이메일을 입력하여 로그인을 완료합니다.
+        
+        **사용 시나리오:**
+        1. 카카오 로그인 시 이메일 정보가 제공되지 않음
+        2. 서버에서 임시 토큰(`tempToken`)과 함께 `needEmail: true` 응답
+        3. 사용자가 이메일을 입력
+        4. 이 API로 임시 토큰과 이메일을 전송
+        5. 최종 JWT 토큰 발급으로 로그인 완료
+        
+        **프론트엔드 구현 예시:**
+        ```javascript
+        // 카카오 콜백에서 needEmail이 true인 경우
+        const completeLogin = async (tempToken, userEmail) => {
+            const response = await fetch('/auth/social/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tempToken: tempToken,
+                    email: userEmail
+                })
+            });
+            
+            const result = await response.json();
+            if (result.isSuccess) {
+                // JWT 토큰 저장 및 로그인 완료
+                localStorage.setItem('token', result.result.token);
+                navigateToMain();
+            }
+        };
+        ```
+        
+        **주의사항:**
+        - 임시 토큰은 30분간만 유효합니다
+        - 이메일은 새로운 계정으로 등록되거나 기존 계정과 연결됩니다
+        - 임시 토큰은 한 번만 사용 가능합니다
+        """
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200", 
+            description = "✅ 소셜 로그인 완료 성공",
+            content = @Content(
+                schema = @Schema(implementation = LoginResponseDTO.class),
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "isSuccess": true,
+                        "code": "200",
+                        "message": "요청에 성공했습니다.",
+                        "result": {
+                            "token": "eyJhbGciOiJIUzI1NiJ9...",
+                            "email": "user@example.com",
+                            "nickname": "카카오사용자",
+                            "provider": "KAKAO"
+                        }
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400", 
+            description = "❌ 유효하지 않은 임시 토큰 또는 이메일",
+            content = @Content(
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "isSuccess": false,
+                        "code": "COMMON400",
+                        "message": "임시 토큰이 유효하지 않거나 만료되었습니다.",
+                        "result": null
+                    }
+                    """
+                )
+            )
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "409", 
+            description = "❌ 이미 다른 소셜 계정으로 등록된 이메일",
+            content = @Content(
+                examples = @ExampleObject(
+                    value = """
+                    {
+                        "isSuccess": false,
+                        "code": "4009",
+                        "message": "이미 사용 중인 이메일입니다.",
+                        "result": null
+                    }
+                    """
+                )
+            )
+        )
+    })
+    public ApiResponse<LoginResponseDTO> completeSocialLogin(@RequestBody @Valid SocialLoginCompleteDTO request) {
+        try {
+            // 1. 임시 토큰에서 소셜 정보 추출
+            Claims tempClaims = jwtTokenProvider.getTempTokenClaims(request.getTempToken());
+            String socialId = tempClaims.get("socialId", String.class);
+            String provider = tempClaims.get("provider", String.class);
+            String nickname = tempClaims.get("nickname", String.class);
+            
+            // 2. 사용자 등록 또는 조회
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseGet(() -> {
+                        User.UserBuilder userBuilder = User.builder()
+                                .email(request.getEmail())
+                                .name(nickname)
+                                .provider(provider)
+                                .role(User.Role.USER)
+                                .emailVerified(true);
+                        
+                        // 소셜 ID 설정
+                        if ("KAKAO".equals(provider)) {
+                            userBuilder.kakaoId(Long.parseLong(socialId));
+                        } else if ("NAVER".equals(provider)) {
+                            userBuilder.naverId(socialId);
+                        }
+                        
+                        return userRepository.save(userBuilder.build());
+                    });
+            
+            // 3. JWT 토큰 생성
+            String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+            
+            LoginResponseDTO loginResponse = LoginResponseDTO.builder()
+                    .token(jwtToken)
+                    .email(user.getEmail())
+                    .nickname(user.getName())
+                    .provider(user.getProvider())
+                    .build();
+            
+            return ApiResponse.onSuccess(loginResponse);
+            
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("임시 토큰이 유효하지 않거나 만료되었습니다.", e);
+        } catch (Exception e) {
+            throw new RuntimeException("소셜 로그인 완료 처리 중 오류가 발생했습니다.", e);
+        }
     }
 } 

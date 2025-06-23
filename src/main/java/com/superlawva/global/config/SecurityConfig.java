@@ -61,6 +61,7 @@ public class SecurityConfig {
                                 "/auth/login",
                                 "/auth/login/kakao",
                                 "/auth/login/naver",
+                                "/auth/social/complete",
                                 "/auth/oauth2/**",
                                 "/auth/oauth2/callback/**",
                                 "/verify/**",
@@ -85,10 +86,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*")); // 배포 시 도메인 제한 권장
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // CORS 문제 해결: allowCredentials와 allowedOrigins "*" 동시 사용 불가
+        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // setAllowedOrigins 대신 사용
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization")); // JWT 헤더 노출
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

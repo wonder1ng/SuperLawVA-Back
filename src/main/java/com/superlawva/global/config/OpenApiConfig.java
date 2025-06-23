@@ -20,6 +20,26 @@ public class OpenApiConfig {
                 .title("SuperLawVA API 명세서")
                 .version("v1.0.0")
                 .description("""
+                        ## 🎯 테스트용 계정 안내
+                        
+                        **누구든 바로 테스트할 수 있는 계정들이 준비되어 있습니다!**
+                        
+                        ### 📝 테스트 계정 목록
+                        | 구분 | 이메일 | 비밀번호 | 설명 |
+                        |------|--------|----------|------|
+                        | **일반 사용자** | `test@example.com` | `password123` | 기본 테스트용 |
+                        | **관리자** | `admin@example.com` | `admin123` | 관리자 권한 |
+                        | **데모 사용자** | `demo@example.com` | `demo123` | 데모 및 프레젠테이션용 |
+                        
+                        ### 🚀 빠른 테스트 방법
+                        1. **`POST /auth/login`** API 클릭
+                        2. 위 계정 중 하나로 로그인
+                        3. 응답에서 **`token`** 복사
+                        4. 우측 상단 **"Authorize"** 클릭 → `Bearer {토큰}` 입력
+                        5. 🔒 마크가 있는 모든 API 테스트 가능!
+                        
+                        ---
+                        
                         ## 🔑 JWT 토큰 발급 가이드
                         
                         API를 테스트하려면 JWT 토큰이 필요합니다. 토큰은 다음 방법들로 발급받을 수 있습니다.

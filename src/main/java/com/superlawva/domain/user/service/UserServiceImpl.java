@@ -50,11 +50,38 @@ public class UserServiceImpl implements UserService {
         }
 
         String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+        
+        // 프론트엔드 호환을 위한 목업 데이터 추가
         return LoginResponseDTO.builder()
                 .token(token)
+                .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getName())
                 .provider(user.getProvider())
+                .notification(List.of(0, 1, 2)) // 알림 목업 데이터
+                .contractArray(List.of(
+                    LoginResponseDTO.ContractInfo.builder()
+                        ._id("contract_" + user.getId())
+                        .title("월세 임대차 계약서")
+                        .state("진행중")
+                        .address("서울시 강남구 테헤란로 123")
+                        .createdAt("2025.03.22")
+                        .build()
+                ))
+                .recentChat(List.of(
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("1")
+                        .title("집 주인이 보증금 안 돌려줘요.")
+                        .build(),
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("2")
+                        .title("전입 신고 방법 알려줘")
+                        .build(),
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("3")
+                        .title("묵시적 갱신이 뭔가요")
+                        .build()
+                ))
                 .build();
     }
 
@@ -193,5 +220,44 @@ public class UserServiceImpl implements UserService {
         // OAuth2 사용자 처리 로직
         // 실제 구현에서는 registrationId에 따라 카카오/네이버 사용자 정보를 처리
         return null; // 임시 구현
+    }
+
+    @Override
+    public LoginResponseDTO getUserDashboard(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        
+        // 프론트엔드 호환을 위한 대시보드 데이터 반환
+        return LoginResponseDTO.builder()
+                .token("existing_token") // 기존 토큰 유지 (프론트에서 갱신하지 않을 경우)
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getName())
+                .provider(user.getProvider())
+                .notification(List.of(0, 1, 2)) // 알림 목업 데이터
+                .contractArray(List.of(
+                    LoginResponseDTO.ContractInfo.builder()
+                        ._id("contract_" + user.getId())
+                        .title("월세 임대차 계약서")
+                        .state("진행중")
+                        .address("서울시 강남구 테헤란로 123")
+                        .createdAt("2025.03.22")
+                        .build()
+                ))
+                .recentChat(List.of(
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("1")
+                        .title("집 주인이 보증금 안 돌려줘요.")
+                        .build(),
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("2")
+                        .title("전입 신고 방법 알려줘")
+                        .build(),
+                    LoginResponseDTO.RecentChat.builder()
+                        ._id("3")
+                        .title("묵시적 갱신이 뭔가요")
+                        .build()
+                ))
+                .build();
     }
 }

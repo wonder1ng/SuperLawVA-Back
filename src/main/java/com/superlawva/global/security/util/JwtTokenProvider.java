@@ -97,4 +97,53 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
+
+    /**
+     * 소셜 로그인 임시 토큰 생성 (이메일 정보가 없을 때 사용)
+     * @param socialId 소셜 플랫폼 사용자 ID
+     * @param provider 소셜 플랫폼 (KAKAO, NAVER)
+     * @param nickname 닉네임
+     * @return 임시 토큰 (짧은 유효기간)
+     */
+    public String createTempToken(String socialId, String provider, String nickname) {
+        Claims claims = Jwts.claims().setSubject("TEMP");
+        claims.put("socialId", socialId);
+        claims.put("provider", provider);
+        claims.put("nickname", nickname);
+        claims.put("type", "TEMP");
+
+        // 임시 토큰은 30분만 유효
+        long tempValidityMs = 30 * 60 * 1000; // 30분
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + tempValidityMs))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    /**
+     * 임시 토큰에서 소셜 정보 추출
+     * @param tempToken 임시 토큰
+     * @return 소셜 정보 맵
+     */
+    public Claims getTempTokenClaims(String tempToken) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(tempToken)
+                    .getBody();
+            
+            // 임시 토큰인지 확인
+            if (!"TEMP".equals(claims.getSubject()) || !"TEMP".equals(claims.get("type"))) {
+                throw new IllegalArgumentException("유효하지 않은 임시 토큰입니다.");
+            }
+            
+            return claims;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new IllegalArgumentException("임시 토큰이 유효하지 않거나 만료되었습니다.");
+        }
+    }
 }
