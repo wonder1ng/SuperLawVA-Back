@@ -78,4 +78,23 @@ public class JwtTokenProvider {
     public String getEmail(String token) {
         return getSubject(token);
     }
+
+    public String resolveToken(jakarta.servlet.http.HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
+    }
+
+    public String createToken(String email) {
+        Claims claims = Jwts.claims().setSubject(email);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + validityMs))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
 }

@@ -2,6 +2,7 @@ package com.superlawva.global.security.controller;
 
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.ApiResponse;
 import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.global.security.util.JwtTokenProvider;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Tag(name = "⚠️ Test & Tools", description = "개발 및 테스트용 API")
 @RequiredArgsConstructor

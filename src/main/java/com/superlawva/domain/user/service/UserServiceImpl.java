@@ -11,6 +11,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -114,5 +117,81 @@ public class UserServiceImpl implements UserService {
         }
         user.changePassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    @Override
+    public UserResponseDTO getMyInfo(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        return UserResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO updateMyInfo(Long userId, UserRequestDTO.UpdateMyInfoDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        
+        if (request.getNickname() != null) {
+            user.changeName(request.getNickname());
+        }
+        
+        userRepository.save(user);
+        return UserResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMyAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        userRepository.delete(user);
+    }
+
+    @Override
+    public List<UserResponseDTO> findAll() {
+        return userRepository.findAll().stream()
+                .map(UserResponseDTO::from)
+                .toList();
+    }
+
+    @Override
+    public UserResponseDTO findById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        return UserResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO update(Long id, UserRequestDTO dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        
+        if (dto.getName() != null) {
+            user.changeName(dto.getName());
+        }
+        if (dto.getEmail() != null) {
+            user.changeEmail(dto.getEmail());
+        }
+        
+        userRepository.save(user);
+        return UserResponseDTO.from(user);
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
+        userRepository.delete(user);
+    }
+
+    @Override
+    @Transactional
+    public User processOAuth2User(String registrationId, Map<String, Object> attributes) {
+        // OAuth2 사용자 처리 로직
+        // 실제 구현에서는 registrationId에 따라 카카오/네이버 사용자 정보를 처리
+        return null; // 임시 구현
     }
 }
