@@ -121,19 +121,33 @@ jobs:
             EOF
 
             echo "=== Docker Compose 배포 ==="
+            # Docker Compose 설치 확인 및 명령어 결정
+            if command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            else
+              echo "Docker Compose를 설치합니다..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+              COMPOSE_CMD="docker-compose"
+            fi
+
+            echo "사용할 Docker Compose 명령어: $COMPOSE_CMD"
+
             # 기존 컨테이너 중지
-            docker compose -f docker-compose.prod.yml down || true
+            $COMPOSE_CMD -f docker-compose.prod.yml down || true
 
             # 새 이미지 풀
-            docker compose -f docker-compose.prod.yml pull app
+            $COMPOSE_CMD -f docker-compose.prod.yml pull app
 
             # 새 컨테이너 시작
-            docker compose -f docker-compose.prod.yml up -d
+            $COMPOSE_CMD -f docker-compose.prod.yml up -d
 
             # 로그 확인
             echo "=== 배포 완료 - 로그 확인 ==="
             sleep 10
-            docker compose -f docker-compose.prod.yml logs --tail=20 app
+            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=20 app
 
             # 헬스체크
             echo "=== 헬스체크 ==="
