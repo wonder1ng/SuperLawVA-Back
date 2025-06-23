@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -139,8 +141,15 @@ public class AuthController {
         )
     })
     public ApiResponse<String> signUp(@RequestBody @Valid UserRequestDTO request) {
-        userService.register(request);
-        return ApiResponse.onSuccess("회원가입이 성공적으로 완료되었습니다.");
+        log.info("🔥 >>> /auth/signup 컨트롤러 도달! email: {}", request.getEmail());
+        try {
+            userService.register(request);
+            log.info("✅ 회원가입 성공: {}", request.getEmail());
+            return ApiResponse.onSuccess("회원가입이 성공적으로 완료되었습니다.");
+        } catch (Exception e) {
+            log.error("❌ 회원가입 실패: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PostMapping("/login")

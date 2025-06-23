@@ -29,10 +29,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        log.debug("JwtAuthFilter 경로 체크: {}", path);
+        
+        // /auth/** 경로는 JWT 검사 건너뜀 (회원가입, 로그인 등)
+        boolean shouldSkip = path.startsWith("/auth") || 
+                           path.startsWith("/actuator") ||
+                           path.startsWith("/v3/api-docs") ||
+                           path.startsWith("/swagger-ui");
+        
+        if (shouldSkip) {
+            log.debug("JWT 필터 건너뜀: {}", path);
+        }
+        
+        return shouldSkip;
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain)
             throws IOException, ServletException {
+
+        log.debug("JWT 필터 실행: {}", request.getRequestURI());
 
         try {
             String token = resolveToken(request);
@@ -44,6 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         email, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                log.debug("JWT 인증 성공: {}", email);
             }
         } catch (Exception e) {
             log.warn("JWT 토큰 처리 중 오류 발생: {}", e.getMessage());
