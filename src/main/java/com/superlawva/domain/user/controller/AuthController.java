@@ -12,6 +12,7 @@ import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.domain.user.service.UserService;
 import com.superlawva.global.response.ApiResponse;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -50,6 +51,7 @@ public class AuthController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final HashUtil hashUtil;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
@@ -625,14 +627,19 @@ public class AuthController {
         String name = (String) response.get("name");
         
         // 3. 사용자 정보로 JWT 토큰 생성
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .email(email)
-                        .name(name)
-                        .provider("NAVER")
-                        .role(User.Role.USER)
-                        .emailVerified(true)
-                        .build()));
+        String emailHash = hashUtil.hash(email);
+        User user = userRepository.findByEmailHash(emailHash)
+                .orElseGet(() -> {
+                    String newEmailHash = hashUtil.hash(email);
+                    return userRepository.save(User.builder()
+                            .email(email)
+                            .emailHash(newEmailHash)
+                            .name(name)
+                            .provider("NAVER")
+                            .role(User.Role.USER)
+                            .emailVerified(true)
+                            .build());
+                });
         
         String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
         
@@ -949,10 +956,13 @@ public class AuthController {
             String nickname = tempClaims.get("nickname", String.class);
             
             // 2. 사용자 등록 또는 조회
-            User user = userRepository.findByEmail(request.getEmail())
+            String emailHash = hashUtil.hash(request.getEmail());
+            User user = userRepository.findByEmailHash(emailHash)
                     .orElseGet(() -> {
+                        String newEmailHash = hashUtil.hash(request.getEmail());
                         User.UserBuilder userBuilder = User.builder()
                                 .email(request.getEmail())
+                                .emailHash(newEmailHash)
                                 .name(nickname)
                                 .provider(provider)
                                 .role(User.Role.USER)

@@ -47,7 +47,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
-        User user = userRepository.findByEmail(loginRequestDTO.getEmail())
+        String emailHash = hashUtil.hash(loginRequestDTO.getEmail());
+        User user = userRepository.findByEmailHash(emailHash)
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
 
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
@@ -93,14 +94,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public LoginResponseDTO kakaoLogin(KakaoLoginRequestDTO kakaoLoginRequestDTO) {
-        User user = userRepository.findByEmail(kakaoLoginRequestDTO.getEmail())
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .email(kakaoLoginRequestDTO.getEmail())
-                        .name(kakaoLoginRequestDTO.getNickname())
-                        .provider("KAKAO")
-                        .role(User.Role.USER)
-                        .emailVerified(true)
-                        .build()));
+        String emailHash = hashUtil.hash(kakaoLoginRequestDTO.getEmail());
+        User user = userRepository.findByEmailHash(emailHash)
+                .orElseGet(() -> {
+                    String newEmailHash = hashUtil.hash(kakaoLoginRequestDTO.getEmail());
+                    return userRepository.save(User.builder()
+                            .email(kakaoLoginRequestDTO.getEmail())
+                            .emailHash(newEmailHash)
+                            .name(kakaoLoginRequestDTO.getNickname())
+                            .provider("KAKAO")
+                            .role(User.Role.USER)
+                            .emailVerified(true)
+                            .build());
+                });
 
         String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
         return LoginResponseDTO.builder()
@@ -114,14 +120,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public LoginResponseDTO naverLogin(NaverLoginRequestDTO naverLoginRequestDTO) {
-        User user = userRepository.findByEmail(naverLoginRequestDTO.getEmail())
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .email(naverLoginRequestDTO.getEmail())
-                        .name(naverLoginRequestDTO.getName())
-                        .provider("NAVER")
-                        .role(User.Role.USER)
-                        .emailVerified(true)
-                        .build()));
+        String emailHash = hashUtil.hash(naverLoginRequestDTO.getEmail());
+        User user = userRepository.findByEmailHash(emailHash)
+                .orElseGet(() -> {
+                    String newEmailHash = hashUtil.hash(naverLoginRequestDTO.getEmail());
+                    return userRepository.save(User.builder()
+                            .email(naverLoginRequestDTO.getEmail())
+                            .emailHash(newEmailHash)
+                            .name(naverLoginRequestDTO.getName())
+                            .provider("NAVER")
+                            .role(User.Role.USER)
+                            .emailVerified(true)
+                            .build());
+                });
 
         String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
         return LoginResponseDTO.builder()
@@ -134,7 +145,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
+        String emailHash = hashUtil.hash(email);
+        return userRepository.findByEmailHash(emailHash)
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
     }
 

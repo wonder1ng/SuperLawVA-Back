@@ -5,6 +5,7 @@ import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.ApiResponse;
 import com.superlawva.global.response.status.ErrorStatus;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,6 +34,7 @@ public class TokenController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final HashUtil hashUtil;
 
     @Operation(summary = "테스트용 소셜 로그인 JWT 발급",
             description = """
@@ -91,8 +93,9 @@ public class TokenController {
         if (refreshToken != null && jwtTokenProvider.validate(refreshToken)) {
             // 3. 토큰에서 이메일 추출
             String email = jwtTokenProvider.getEmail(refreshToken);
-            // 4. 이메일로 사용자 정보 조회
-            User user = userRepository.findByEmail(email).orElse(null);
+            // 4. 이메일로 사용자 정보 조회  
+            String emailHash = hashUtil.hash(email);
+            User user = userRepository.findByEmailHash(emailHash).orElse(null);
             // 5. 새로운 액세스 토큰 생성
             String newAccessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
             // 6. 새로운 액세스 토큰 반환
