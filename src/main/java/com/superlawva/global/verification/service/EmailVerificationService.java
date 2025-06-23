@@ -1,7 +1,7 @@
 package com.superlawva.global.verification.service;
 
 import com.superlawva.global.mail.MailService;
-import com.superlawva.global.security.util.AESUtil;
+// import com.superlawva.global.security.util.AESUtil;
 import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.status.ErrorStatus;
@@ -22,7 +22,7 @@ public class EmailVerificationService {
 
     private final MailService mailService;
     private final RedisTemplate<String, String> redisTemplate;
-    private final AESUtil aesUtil;
+    // private final AESUtil aesUtil; // AES 임시 비활성화
     private final UserRepository userRepository;
     private final HashUtil hashUtil;
 
@@ -33,9 +33,9 @@ public class EmailVerificationService {
         String code = generate6DigitCode();
         String key = "email:verify:" + email;
 
-        // 1. AES로 인증번호 암호화 후 Redis에 저장 (30분 유효)
-        String encryptedCode = aesUtil.encrypt(code);
-        redisTemplate.opsForValue().set(key, encryptedCode, Duration.ofMinutes(30));
+        // 1. AES 암호화 임시 비활성화 - 평문으로 Redis에 저장 (30분 유효)
+        // String encryptedCode = aesUtil.encrypt(code);
+        redisTemplate.opsForValue().set(key, code, Duration.ofMinutes(30)); // 평문 저장
 
         // 2. HTML 형식 메일 본문 작성
         String subject = "이메일 인증번호";
@@ -50,12 +50,12 @@ public class EmailVerificationService {
 
     public boolean verifyToken(String email, String code) {
         String key = "email:verify:" + email;
-        String encryptedStoredCode = redisTemplate.opsForValue().get(key);
+        String storedCode = redisTemplate.opsForValue().get(key); // 평문으로 가져오기
 
-        if (encryptedStoredCode != null) {
+        if (storedCode != null) {
             try {
-                // AES 복호화하여 비교
-                String storedCode = aesUtil.decrypt(encryptedStoredCode);
+                // AES 복호화 비활성화 - 평문 비교
+                // String storedCode = aesUtil.decrypt(encryptedStoredCode);
                 if (storedCode.equals(code)) {
                     redisTemplate.delete(key);
                     return true;
@@ -68,21 +68,25 @@ public class EmailVerificationService {
     }
 
     /**
-     * 보안 인증 토큰 생성 (이메일 링크 인증용)
+     * 보안 인증 토큰 생성 (이메일 링크 인증용) - 임시 비활성화
      * @param email 사용자 이메일
      * @return 암호화된 토큰
      */
     public String generateSecureVerificationToken(String email) {
-        return aesUtil.generateSecureToken(email);
+        // return aesUtil.generateSecureToken(email);
+        return "temp_token_" + email + "_" + System.currentTimeMillis(); // 임시 토큰
     }
 
     /**
-     * 보안 토큰 검증
+     * 보안 토큰 검증 - 임시 비활성화
      * @param token 검증할 토큰
      * @param email 예상되는 이메일
      * @return 토큰 유효성
      */
     public boolean verifySecureToken(String token, String email) {
+        // AES 토큰 검증 임시 비활성화
+        return token.contains(email); // 임시 검증 로직
+        /*
         try {
             String extractedEmail = aesUtil.extractDataFromToken(token);
             boolean isValidTime = aesUtil.isTokenValid(token, Duration.ofHours(24).toMillis()); // 24시간 유효
@@ -90,6 +94,7 @@ public class EmailVerificationService {
         } catch (Exception e) {
             return false;
         }
+        */
     }
 
     private String generate6DigitCode() {
@@ -116,14 +121,15 @@ public class EmailVerificationService {
 
     public void verifyEmail(EmailVerifyRequestDTO request) {
         String key = "email:verify:" + request.getEmail();
-        String encryptedStoredCode = redisTemplate.opsForValue().get(key);
+        String storedCode = redisTemplate.opsForValue().get(key); // 평문으로 가져오기
         
-        if (encryptedStoredCode == null) {
+        if (storedCode == null) {
             throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_FOUND);
         }
         
         try {
-            String storedCode = aesUtil.decrypt(encryptedStoredCode);
+            // AES 복호화 비활성화 - 평문 비교
+            // String storedCode = aesUtil.decrypt(encryptedStoredCode);
             if (!storedCode.equals(request.getCode())) {
                 throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_MATCH);
             }
