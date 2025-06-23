@@ -56,26 +56,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/signup",
-                                "/auth/login",
-                                "/auth/login/kakao",
-                                "/auth/login/naver",
-                                "/auth/social/complete",
-                                "/auth/oauth2/**",
-                                "/auth/oauth2/callback/**",
-                                "/verify/**",
-                                "/api/email/send",
-                                "/api/email/verify",
-                                "/actuator/health",
-                                "/actuator/info",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
-                        .requestMatchers(POST, "/users").permitAll()
+                        .requestMatchers("/**").permitAll()  // 임시로 모든 경로 허용하여 디버깅
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
