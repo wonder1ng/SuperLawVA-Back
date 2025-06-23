@@ -23,7 +23,18 @@ public enum ErrorStatus {
     TEMP_EXCEPTION(HttpStatus.BAD_REQUEST, "TEMP4001", "이거는 테스트"),
 
     // ✅ JWT 관련
-    INVALID_OR_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_OR_EXPIRED_TOKEN", "JWT가 유효하지 않거나 만료되었습니다.");
+    INVALID_OR_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_OR_EXPIRED_TOKEN", "JWT가 유효하지 않거나 만료되었습니다."),
+
+    // User
+    _USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER404", "존재하지 않는 사용자입니다."),
+    _EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "USER409", "이미 가입된 이메일입니다."),
+    _PASSWORD_NOT_MATCH(HttpStatus.BAD_REQUEST, "USER400", "비밀번호가 일치하지 않습니다."),
+    _PASSWORD_CONFIRM_NOT_MATCH(HttpStatus.BAD_REQUEST, "USER400", "비밀번호와 비밀번호 확인이 일치하지 않습니다."),
+
+    // Email Verification
+    _VERIFICATION_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL404", "인증 코드를 찾을 수 없습니다."),
+    _VERIFICATION_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "EMAIL400", "인증 코드가 만료되었습니다."),
+    _VERIFICATION_CODE_NOT_MATCH(HttpStatus.BAD_REQUEST, "EMAIL400", "인증 코드가 일치하지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

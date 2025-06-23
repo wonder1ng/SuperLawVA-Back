@@ -3,6 +3,7 @@ package com.superlawva.global.util;
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.security.annotation.LoginUser;
+import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final HashUtil hashUtil;
 
     @Override
     public boolean supportsParameter(MethodParameter param) {
@@ -42,15 +44,16 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
         }
 
         String email = (String) auth.getPrincipal();
+        String emailHash = hashUtil.hash(email);
 
         // ✅ @LoginUser User
         if (param.getParameterType().equals(User.class)) {
-            return userRepository.findByEmail(email).orElse(null);
+            return userRepository.findByEmailHash(emailHash).orElse(null);
         }
 
         // ✅ @LoginUser Long
         if (param.getParameterType().equals(Long.class)) {
-            User user = userRepository.findByEmail(email).orElse(null);
+            User user = userRepository.findByEmailHash(emailHash).orElse(null);
             return user != null ? user.getId() : null;
         }
 

@@ -85,6 +85,10 @@ public class SecurityConfig {
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+                // HTTPS 강제 설정 임시 비활성화 (배포 후 환경변수로 활성화 가능)
+                // .requiresChannel(channel -> channel
+                //         .anyRequest().requiresSecure()
+                // );
 
         return http.build();
     }

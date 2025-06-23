@@ -1,5 +1,6 @@
 package com.superlawva.domain.user.entity;
 
+import com.superlawva.global.security.converter.AesCryptoConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "users",
-        indexes = @Index(columnList = "kakaoId", unique = true)
+        indexes = {
+                @Index(columnList = "kakaoId", unique = true),
+                @Index(columnList = "naverId", unique = true),
+                @Index(columnList = "emailHash", unique = true)
+        }
 )
 @Getter
 @Setter
@@ -25,13 +30,22 @@ public class User {
     @Column(unique = true)
     private Long kakaoId;
 
+    /** 소셜 로그인(네이버) 시에만 값 존재 */
+    @Column(unique = true)
+    private String naverId;
+
+    @Column(nullable = false, unique = true)
+    private String emailHash;
+
     @Column(nullable = false)
+    @Convert(converter = AesCryptoConverter.class)
     private String email;
 
     @Column(nullable = true)  // 소셜 로그인 사용자는 password가 null일 수 있음
     private String password;
 
     @Column(nullable = false)
+    @Convert(converter = AesCryptoConverter.class)
     private String nickname;
 
     /** USER · ADMIN */
@@ -50,6 +64,8 @@ public class User {
     @Builder.Default
     @Column(nullable = false)
     private boolean emailVerified = false;
+
+    private LocalDateTime deletedAt; // 소프트 삭제용 필드
 
     /* ==================== JPA Life-cycle ==================== */
 
@@ -77,6 +93,10 @@ public class User {
         if (nickname != null) {
             this.nickname = nickname;
         }
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
     }
 }
 
