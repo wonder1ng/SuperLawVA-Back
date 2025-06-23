@@ -27,4 +27,23 @@ public class UserResponseDTO {
                 .emailVerified(user.isEmailVerified())
                 .build();
     }
+
+    public static UserResponseDTO from(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .emailVerified(user.isEmailVerified())
+                .build();
+    }
+
+    @Getter
+    @Builder
+    public static class MyPageDTO {
+        private Long id;
+        private String email;
+        private String name;
+    }
 }

@@ -94,3 +94,14 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+# AWS 설정
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:superlawva-logs}
+  cloudwatch:
+    log-group-name: ${AWS_CLOUDWATCH_LOG_GROUP:superlawva-application}
+    log-stream-name: ${AWS_CLOUDWATCH_LOG_STREAM:ec2-instance}

@@ -37,8 +37,8 @@ public class UserRequestDTO {
     @Getter
     @Setter
     public static class SignUpDTO {
-        @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
-        private String nickname;
+        @NotBlank(message = "이름은 필수 입력 항목입니다.")
+        private String name;
 
         @NotBlank(message = "이메일은 필수 입력 항목입니다.")
         @Email(message = "유효한 이메일 주소를 입력해주세요.")
@@ -48,6 +48,9 @@ public class UserRequestDTO {
         @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$",
                 message = "비밀번호는 8~16자리의 영문, 숫자, 특수문자를 모두 포함해야 합니다.")
         private String password;
+
+        @NotBlank(message = "비밀번호 확인은 필수 입력 항목입니다.")
+        private String confirmPassword;
     }
 
     @Getter

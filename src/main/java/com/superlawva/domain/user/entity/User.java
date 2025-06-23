@@ -46,7 +46,10 @@ public class User {
 
     @Column(nullable = false)
     @Convert(converter = AesCryptoConverter.class)
-    private String nickname;
+    private String name;
+
+    @Column(nullable = false)
+    private String provider; // LOCAL, KAKAO, NAVER
 
     /** USER · ADMIN */
     @Enumerated(EnumType.STRING)
@@ -89,14 +92,19 @@ public class User {
         this.password = password;
     }
 
-    public void changeNickname(String nickname) {
-        if (nickname != null) {
-            this.nickname = nickname;
+    public void changeName(String name) {
+        if (name != null) {
+            this.name = name;
         }
     }
 
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateSnsInfo(String name, String provider) {
+        this.name = name;
+        this.provider = provider;
     }
 }
 

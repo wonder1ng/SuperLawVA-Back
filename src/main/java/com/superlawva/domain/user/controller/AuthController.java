@@ -1,7 +1,9 @@
 package com.superlawva.domain.user.controller;
 
+import com.superlawva.domain.user.dto.KakaoLoginRequestDTO;
 import com.superlawva.domain.user.dto.LoginRequestDTO;
 import com.superlawva.domain.user.dto.LoginResponseDTO;
+import com.superlawva.domain.user.dto.NaverLoginRequestDTO;
 import com.superlawva.domain.user.dto.UserRequestDTO;
 import com.superlawva.domain.user.dto.UserResponseDTO;
 import com.superlawva.domain.user.service.UserService;
@@ -48,4 +50,28 @@ public class AuthController {
     public ApiResponse<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO request) {
         return ApiResponse.onSuccess(userService.login(request));
     }
-}
+
+    @PostMapping("/login/kakao")
+    @Operation(summary = "카카오 소셜 로그인", description = "카카오 인가 코드를 받아 로그인 처리 후 JWT 토큰을 발급합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공",
+                    content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 인가 코드"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "카카오 서버 통신 오류")
+    })
+    public ApiResponse<LoginResponseDTO> kakaoLogin(@RequestBody @Valid KakaoLoginRequestDTO request) {
+        return ApiResponse.onSuccess(userService.kakaoLogin(request));
+    }
+
+    @PostMapping("/login/naver")
+    @Operation(summary = "네이버 소셜 로그인", description = "네이버 인가 코드를 받아 로그인 처리 후 JWT 토큰을 발급합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공",
+                    content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 인가 코드 또는 state"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "네이버 서버 통신 오류")
+    })
+    public ApiResponse<LoginResponseDTO> naverLogin(@RequestBody @Valid NaverLoginRequestDTO request) {
+        return ApiResponse.onSuccess(userService.naverLogin(request));
+    }
+} 

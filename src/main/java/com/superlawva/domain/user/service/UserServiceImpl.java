@@ -1,273 +1,306 @@
 package com.superlawva.domain.user.service;
 
-import com.superlawva.domain.user.dto.LoginRequestDTO;
-import com.superlawva.domain.user.dto.LoginResponseDTO;
-import com.superlawva.domain.user.dto.PasswordChangeRequestDTO;
-import com.superlawva.domain.user.dto.UserRequestDTO;
-import com.superlawva.domain.user.dto.UserResponseDTO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.superlawva.domain.user.dto.*;
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.status.ErrorStatus;
-import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final HashUtil hashUtil;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ObjectMapper objectMapper;
+
+
+    @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
+    private String kakaoClientId;
+
+    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
+    private String kakaoRedirectUri;
+
+    @Value("${spring.security.oauth2.client.provider.kakao.token-uri}")
+    private String kakaoTokenUri;
+
+    @Value("${spring.security.oauth2.client.provider.kakao.user-info-uri}")
+    private String kakaoUserInfoUri;
+
+    @Value("${spring.security.oauth2.client.registration.naver.client-id}")
+    private String naverClientId;
+
+    @Value("${spring.security.oauth2.client.registration.naver.client-secret}")
+    private String naverClientSecret;
+
+    @Value("${spring.security.oauth2.client.provider.naver.token-uri}")
+    private String naverTokenUri;
+
+    @Value("${spring.security.oauth2.client.provider.naver.user-info-uri}")
+    private String naverUserInfoUri;
 
     @Override
-    public List<UserResponseDTO> findAll() {
-        return userRepository.findAll().stream()
-                .map(UserResponseDTO::of)
-                .collect(Collectors.toList());
-    }
+    public List<UserResponseDTO> findAll() { return null; }
 
     @Override
-    public UserResponseDTO findById(Long id) {
-        User u = userRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
-        return UserResponseDTO.of(u);
-    }
+    public UserResponseDTO findById(Long id) { return null; }
 
     @Override
-    @Transactional
-    public UserResponseDTO create(UserRequestDTO dto) {
-        String emailHash = hashUtil.hash(dto.getEmail());
-        if (userRepository.existsByEmailHash(emailHash)) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-        }
-        
-        // 일반 회원가입 시 password 필수 검증
-        if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("비밀번호는 필수입니다.");
-        }
-        
-        User user = User.builder()
-                .email(dto.getEmail())
-                .emailHash(emailHash)
-                .password(passwordEncoder.encode(dto.getPassword()))
-                .nickname(dto.getNickname())
-                .build();
-        User saved = userRepository.save(user);
-        return UserResponseDTO.of(saved);
-    }
+    public UserResponseDTO create(UserRequestDTO dto) { return null; }
 
     @Override
-    @Transactional
-    public UserResponseDTO update(Long id, UserRequestDTO dto) {
-        User u = userRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
-        
-        // 이메일 변경 시 해시도 함께 업데이트
-        if (dto.getEmail() != null && !dto.getEmail().equals(u.getEmail())) {
-            u.setEmail(dto.getEmail());
-            u.setEmailHash(hashUtil.hash(dto.getEmail()));
-        }
-
-        u.changeNickname(dto.getNickname());
-        User saved = userRepository.save(u);
-        return UserResponseDTO.of(saved);
-    }
+    public UserResponseDTO update(Long id, UserRequestDTO dto) { return null; }
 
     @Override
-    @Transactional
-    public void delete(Long id) {
-        userRepository.deleteById(id);
-    }
+    public void delete(Long id) { }
 
     @Override
-    public UserResponseDTO getMyInfo(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
-        return UserResponseDTO.of(user);
-    }
+    public UserResponseDTO getMyInfo(Long userId) { return null; }
 
     @Override
-    @Transactional
-    public UserResponseDTO updateMyInfo(Long userId, UserRequestDTO.UpdateMyInfoDTO dto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
-        user.changeNickname(dto.getNickname());
-        return UserResponseDTO.of(userRepository.save(user));
-    }
+    public UserResponseDTO updateMyInfo(Long userId, UserRequestDTO.UpdateMyInfoDTO dto) { return null; }
 
     @Override
-    @Transactional
-    public void deleteMyAccount(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
-        user.softDelete(); // deletedAt 필드를 현재 시간으로 설정
-        userRepository.save(user);
-    }
+    public void deleteMyAccount(Long userId) { }
 
     @Override
-    @Transactional
-    public void changePassword(Long id, PasswordChangeRequestDTO request) {
-        User user = userRepository.findById(id).orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
+    public void processOAuth2User(String registrationId, Map<String,Object> attributes) { }
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new BaseException(ErrorStatus._PASSWORD_NOT_MATCH);
-        }
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new BaseException(ErrorStatus._PASSWORD_CONFIRM_NOT_MATCH);
-        }
-
-        user.changePassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-    }
 
     @Override
     @Transactional
     public UserResponseDTO signUp(UserRequestDTO.SignUpDTO request) {
-        String emailHash = hashUtil.hash(request.getEmail());
-        if (userRepository.findByEmailHash(emailHash).isPresent()) {
-            throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
+        checkEmailDuplication(request.getEmail());
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new BaseException(ErrorStatus._PASSWORD_CONFIRM_NOT_MATCH);
         }
 
         User user = User.builder()
                 .email(request.getEmail())
-                .emailHash(emailHash)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .nickname(request.getNickname())
+                .name(request.getName())
+                .provider("LOCAL")
                 .build();
-
-        User savedUser = userRepository.save(user);
-        return UserResponseDTO.of(savedUser);
+        userRepository.save(user);
+        return UserResponseDTO.from(user);
     }
 
     @Override
-    @Transactional
-    public LoginResponseDTO login(LoginRequestDTO request) {
-        String emailHash = hashUtil.hash(request.getEmail());
-        User user = userRepository.findByEmailHash(emailHash)
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
+    }
 
+    @Override
+    public void checkEmailDuplication(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
+        });
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BaseException(ErrorStatus._USER_NOT_FOUND));
+    }
+
+    @Override
+    public List<UserResponseDTO> getUsers(String keyword) {
+        List<User> users = userRepository.findByNameContaining(keyword);
+        return users.stream().map(UserResponseDTO::from).collect(Collectors.toList());
+    }
+
+    @Override
+    public LoginResponseDTO login(LoginRequestDTO request) {
+        User user = findByEmail(request.getEmail());
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new BaseException(ErrorStatus._PASSWORD_NOT_MATCH);
         }
-
-        String accessToken = jwtTokenProvider.createToken(user.getEmail());
-
+        String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
         return LoginResponseDTO.builder()
-                .token(accessToken)
-                .userName(user.getNickname())
-                .notification(getNotificationCounts(user.getId()))
-                .contractArray(getRecentContract(user.getId()))
-                .recentChat(getRecentChats(user.getId()))
+                .token(token)
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .provider(user.getProvider())
                 .build();
-    }
-
-    // 알림 개수 조회 메서드 (하드코딩)
-    private List<Integer> getNotificationCounts(Long userId) {
-        try {
-            // TODO: 나중에 실제 알림 테이블 구현되면 아래와 같이 변경
-            // int unread = alarmRepository.countByUserIdAndIsReadFalse(userId);
-            // int urgent = alarmRepository.countUrgentByUserId(userId);
-            // int total = alarmRepository.countByUserId(userId);
-            // return Arrays.asList(unread, urgent, total);
-            return List.of(0, 1, 2); // [읽지않은, 긴급, 전체]
-        } catch (Exception e) {
-            return List.of(0, 0, 0);
-        }
-    }
-
-    // 계약 정보 조회 메서드 (하드코딩)
-    private List<LoginResponseDTO.ContractInfo> getRecentContract(Long userId) {
-        try {
-            LoginResponseDTO.ContractInfo contractInfo = LoginResponseDTO.ContractInfo.builder()
-                    ._id("asdasd")
-                    .title("월세 임대차 계약서")
-                    .state("진행중")
-                    .address("서울시 강남구 테헤란로 123")
-                    .createdAt("2025.03.22")
-                    .build();
-            return List.of(contractInfo);
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
-
-    // 최근 채팅 목록 조회 메서드 (하드코딩)
-    private List<LoginResponseDTO.RecentChat> getRecentChats(Long userId) {
-        try {
-            return List.of(
-                    LoginResponseDTO.RecentChat.builder()
-                            ._id("1")
-                            .title("집 주인이 보증금 안 돌려줘요.")
-                            .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                            ._id("2")
-                            .title("전입 신고 방법 알려줘")
-                            .build(),
-                    LoginResponseDTO.RecentChat.builder()
-                            ._id("3")
-                            .title("묵시적 갱신이 뭔가요")
-                            .build()
-            );
-        } catch (Exception e) {
-            return List.of();
-        }
     }
 
     @Override
     @Transactional
-    public void processOAuth2User(String registrationId, Map<String, Object> attributes) {
-        String email = null;
-        String nickname = null;
-        String naverId = null;
-        Long kakaoId = null;
+    public LoginResponseDTO kakaoLogin(KakaoLoginRequestDTO request) {
+        String accessToken = getKakaoAccessToken(request.getAuthorizationCode());
+        Map<String, Object> userInfo = getKakaoUserInfo(accessToken);
 
-        if ("naver".equals(registrationId)) {
-            Map<String, Object> response = (Map<String, Object>) attributes.get("response");
-            email = (String) response.get("email");
-            nickname = (String) response.get("nickname");
-            naverId = (String) response.get("id");
-        } else if ("kakao".equals(registrationId)) {
-            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-            Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
-            email = (String) kakaoAccount.get("email");
-            nickname = (String) profile.get("nickname");
-            kakaoId = (Long) attributes.get("id");
+        Map<String, Object> kakaoAccount = (Map<String, Object>) userInfo.get("kakao_account");
+        Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+        String email = (String) kakaoAccount.get("email");
+        String name = (String) profile.get("nickname");
+
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .email(email)
+                            .name(name)
+                            .provider("KAKAO")
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+        return LoginResponseDTO.builder()
+                .token(jwtToken)
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .provider(user.getProvider())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public LoginResponseDTO naverLogin(NaverLoginRequestDTO request) {
+        String accessToken = getNaverAccessToken(request.getAuthorizationCode(), request.getState());
+        Map<String, Object> userInfo = getNaverUserInfo(accessToken);
+
+        Map<String, Object> responseAttributes = (Map<String, Object>) userInfo.get("response");
+        String email = (String) responseAttributes.get("email");
+        String name = (String) responseAttributes.get("name");
+
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .email(email)
+                            .name(name)
+                            .provider("NAVER")
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+        return LoginResponseDTO.builder()
+                .token(jwtToken)
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .provider(user.getProvider())
+                .build();
+    }
+
+    @Override
+    public UserResponseDTO.MyPageDTO getMyPage(User user) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(User user, PasswordChangeRequestDTO request) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BaseException(ErrorStatus._PASSWORD_NOT_MATCH);
         }
-
-        if (email == null) {
-            // 이메일 동의를 하지 않은 경우 처리
-            throw new IllegalArgumentException("소셜 로그인 시 이메일 제공 동의가 필요합니다.");
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new BaseException(ErrorStatus._PASSWORD_CONFIRM_NOT_MATCH);
         }
-        
-        String emailHash = hashUtil.hash(email);
-        Optional<User> existing = userRepository.findByEmailHash(emailHash);
+        user.changePassword(passwordEncoder.encode(request.getNewPassword()));
+    }
 
-        if (existing.isEmpty()) {
-            User u = User.builder()
-                    .email(email)
-                    .emailHash(emailHash)
-                    .nickname(nickname)
-                    .kakaoId(kakaoId)
-                    .naverId(naverId)
-                    .emailVerified(true) // 소셜 로그인은 이메일 인증된 것으로 간주
-                    .build();
-            userRepository.save(u);
-        } else {
-            // 기존 회원이 다른 소셜로 연동 시도하는 경우 등 확장 가능
-            User user = existing.get();
-            if (nickname != null && !nickname.equals(user.getNickname())) {
-                user.changeNickname(nickname);
-                userRepository.save(user);
+    private String getKakaoAccessToken(String code) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "authorization_code");
+        params.add("client_id", kakaoClientId);
+        params.add("redirect_uri", kakaoRedirectUri);
+        params.add("code", code);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(kakaoTokenUri, request, String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = objectMapper.readValue(response.getBody(), Map.class);
+                return (String) responseBody.get("access_token");
             }
+        } catch (JsonProcessingException e) {
+            throw new BaseException(ErrorStatus._INTERNAL_SERVER_ERROR);
         }
+        throw new BaseException(ErrorStatus.KAKAO_TOKEN_REQUEST_FAILED);
+    }
+
+    private Map<String, Object> getKakaoUserInfo(String accessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(kakaoUserInfoUri, HttpMethod.GET, request, String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return objectMapper.readValue(response.getBody(), Map.class);
+            }
+        } catch (JsonProcessingException e) {
+            throw new BaseException(ErrorStatus._INTERNAL_SERVER_ERROR);
+        }
+        throw new BaseException(ErrorStatus.KAKAO_USER_INFO_FAILED);
+    }
+
+    private String getNaverAccessToken(String authorizationCode, String state) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "authorization_code");
+        params.add("client_id", naverClientId);
+        params.add("client_secret", naverClientSecret);
+        params.add("code", authorizationCode);
+        params.add("state", state);
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(naverTokenUri, requestEntity, Map.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return (String) response.getBody().get("access_token");
+            }
+        } catch (Exception e) {
+            throw new BaseException(ErrorStatus.NAVER_TOKEN_REQUEST_FAILED);
+        }
+        throw new BaseException(ErrorStatus.NAVER_TOKEN_REQUEST_FAILED);
+    }
+
+    private Map<String, Object> getNaverUserInfo(String accessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(naverUserInfoUri, HttpMethod.GET, requestEntity, Map.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                return response.getBody();
+            }
+        } catch (Exception e) {
+            throw new BaseException(ErrorStatus.NAVER_USER_INFO_FAILED);
+        }
+        throw new BaseException(ErrorStatus.NAVER_USER_INFO_FAILED);
     }
 }

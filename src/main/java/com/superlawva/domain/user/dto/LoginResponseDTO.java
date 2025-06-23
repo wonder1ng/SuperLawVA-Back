@@ -12,8 +12,14 @@ import java.util.List;
 @Schema(description = "로그인 응답 DTO")
 public class LoginResponseDTO {
 
-    @Schema(description = "JWT Access Token", example = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QHRlc3QuY29tIiwiaWF0IjoxNzE5MjA5ODg5LCJleHAiOjE3MTkyMTM0ODl9.abcdef123456")
+    @Schema(description = "발급된 JWT Access Token", example = "eyJhbGciOiJIUzI1NiJ9...")
     private String token;
+
+    @Schema(description = "사용자 ID(고유번호)", example = "1")
+    private Long id;
+
+    @Schema(description = "사용자 이메일", example = "test@example.com")
+    private String email;
 
     @Schema(description = "사용자 닉네임", example = "아무개")
     private String userName;
