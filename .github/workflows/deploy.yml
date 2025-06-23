@@ -83,7 +83,7 @@ jobs:
           echo "--- 원격 배포 스크립트 작성 ---"
           cat << 'DEPLOY_SCRIPT' > deploy.sh
           #!/bin/bash
-          set -e
+          set -ex
 
           echo "=== Java 설치 확인 ==="
           java -version || { echo "Java가 설치되지 않았습니다"; exit 1; }
@@ -121,8 +121,12 @@ jobs:
           fi
 
           echo "=== 기존 앱 중지 ==="
-          pkill -f 'java.*app.jar' || true
-          sleep 2
+          if sudo fuser -k 8080/tcp; then
+              echo "8080 포트 사용 프로세스 종료 성공"
+          else
+              echo "8080 포트 사용 프로세스가 없거나 종료에 실패했습니다 (계속 진행)"
+          fi
+          sleep 5
 
           echo "=== 환경변수 확인 ==="
           echo "DATABASE_URL 형식 확인: $(echo $DATABASE_URL | sed 's/\/\/.*@/\/\/***@/g')"
@@ -188,7 +192,7 @@ jobs:
             -DNAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
             -DREDIS_HOST=localhost \
             -DREDIS_PORT=6380 \
-            /home/ubuntu/app.jar > /home/ubuntu/log.txt 2>&1 &
+            /home/ubuntu/app.jar >> /home/ubuntu/log.txt 2>&1 &
 
           APP_PID=$!
           echo "PID: $APP_PID"

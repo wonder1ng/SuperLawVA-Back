@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Random;
 
+import com.superlawva.global.verification.dto.request.EmailVerifyRequestDTO;
+
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
@@ -95,5 +97,13 @@ public class EmailVerificationService {
                 "<h3 style='text-align: center;'>" + purpose +
                 " : <strong style='font-size: 32px; letter-spacing: 8px;'>" +
                 value + "</strong></h3>";
+    }
+
+    public void sendVerificationEmail(String email) {
+        // Implementation needed
+    }
+
+    public void verifyEmail(EmailVerifyRequestDTO request) {
+        // Implementation needed
     }
 }

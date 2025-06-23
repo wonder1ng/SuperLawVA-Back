@@ -2,20 +2,29 @@ package com.superlawva.domain.user.dto;
 
 import com.superlawva.domain.user.entity.User;
 import lombok.Getter;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
 
 @Getter
+@Builder
+@AllArgsConstructor
 public class UserResponseDTO {
     private Long   id;
     private String email;
     private String nickname;
-    private String role;
+    private User.Role role;
+    private LocalDateTime createdAt;
+    private boolean emailVerified;
 
-    public static UserResponseDTO from(User u) {
-        UserResponseDTO dto = new UserResponseDTO();
-        dto.id       = u.getId();
-        dto.email    = u.getEmail();
-        dto.nickname = u.getNickname();
-        dto.role     = u.getRole().name();
-        return dto;
+    public static UserResponseDTO of(User user) {
+        return UserResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .emailVerified(user.isEmailVerified())
+                .build();
     }
 }
