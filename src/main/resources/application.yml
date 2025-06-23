@@ -105,3 +105,15 @@ aws:
   cloudwatch:
     log-group-name: ${AWS_CLOUDWATCH_LOG_GROUP:superlawva-application}
     log-stream-name: ${AWS_CLOUDWATCH_LOG_STREAM:ec2-instance}
+
+# 로깅 설정
+logging:
+  level:
+    com.superlawva.global.security.filter.JwtAuthFilter: INFO
+    org.apache.coyote.http11.Http11Processor: WARN
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
