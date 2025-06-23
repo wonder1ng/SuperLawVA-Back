@@ -26,6 +26,13 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - REDIS_HOST=redis
       - REDIS_PORT=6379 # 내부 네트워크에서는 6379 사용
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health"]
       interval: 30s
