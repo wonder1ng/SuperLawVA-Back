@@ -109,7 +109,7 @@ jobs:
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             REDIS_HOST=redis
-            REDIS_PORT=6380
+            REDIS_PORT=6379
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             AES_SECRET_KEY=${{ secrets.AES_SECRET_KEY }}
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
@@ -126,8 +126,20 @@ jobs:
             EOF
 
             echo "=== Docker Compose 배포 ==="
-            # 6379 포트 사용 중인 프로세스 강제 종료
+            # 6379/6380 포트 사용 중인 프로세스 강제 종료
+            echo "포트 6379/6380 정리 중..."
+            sudo fuser -k 6379/tcp || true
+            sudo fuser -k 6380/tcp || true
             sudo lsof -ti:6379 | xargs -r sudo kill -9 || true
+            sudo lsof -ti:6380 | xargs -r sudo kill -9 || true
+
+            # Redis 시스템 서비스 중지 (있다면)
+            sudo systemctl stop redis-server 2>/dev/null || true
+            sudo systemctl stop redis 2>/dev/null || true
+
+            # Redis 관련 Docker 컨테이너 정리
+            docker stop $(docker ps -q --filter "name=redis") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "name=redis") 2>/dev/null || true
 
             # Docker Compose 설치 확인 및 명령어 결정
             if command -v docker-compose >/dev/null 2>&1; then
