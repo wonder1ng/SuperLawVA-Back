@@ -121,8 +121,8 @@ jobs:
           fi
 
           echo "=== 기존 앱 중지 ==="
-          sudo pkill -f 'java.*app.jar' || true
-          sleep 2
+          sudo pkill -9 -f 'java.*app.jar' || true
+          sleep 5
 
           echo "=== 환경변수 확인 ==="
           echo "DATABASE_URL 형식 확인: $(echo $DATABASE_URL | sed 's/\/\/.*@/\/\/***@/g')"
