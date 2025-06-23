@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 via ECR
+name: Deploy Spring Boot to EC2
 
 on:
   push:
