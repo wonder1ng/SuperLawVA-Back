@@ -112,3 +112,7 @@ logging:
     com.superlawva: INFO
     org.springframework.security: WARN
     org.hibernate: WARN
+
+# 테스트 사용자 생성 비활성화 (프로덕션 환경)
+app:
+  create-test-users: false
