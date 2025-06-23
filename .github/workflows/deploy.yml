@@ -121,7 +121,11 @@ jobs:
           fi
 
           echo "=== 기존 앱 중지 ==="
-          sudo pkill -9 -f 'java.*app.jar' || true
+          if sudo fuser -k 8080/tcp; then
+              echo "8080 포트 사용 프로세스 종료 성공"
+          else
+              echo "8080 포트 사용 프로세스가 없거나 종료에 실패했습니다 (계속 진행)"
+          fi
           sleep 5
 
           echo "=== 환경변수 확인 ==="
