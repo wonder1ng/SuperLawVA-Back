@@ -68,8 +68,6 @@ public class User {
     @Column(nullable = false)
     private boolean emailVerified = false;
 
-    private LocalDateTime deletedAt; // 소프트 삭제용 필드
-
     /* ==================== JPA Life-cycle ==================== */
 
        @PrePersist
@@ -96,10 +94,6 @@ public class User {
         if (name != null) {
             this.name = name;
         }
-    }
-
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
     }
 
     public void updateSnsInfo(String name, String provider) {
