@@ -21,7 +21,7 @@ public class AESUtil {
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
     
-    @Value("${aes.secret-key:your_32_character_secret_key_here_}")
+    @Value("${aes.secret-key:SuperLawVA_AES_Secret_Key_12345678}")
     private String secretKey;
 
     /**
