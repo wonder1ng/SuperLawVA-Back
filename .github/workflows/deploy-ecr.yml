@@ -109,7 +109,7 @@ jobs:
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             REDIS_HOST=redis
-            REDIS_PORT=6379
+            REDIS_PORT=6380
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             AES_SECRET_KEY=${{ secrets.AES_SECRET_KEY }}
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
@@ -126,6 +126,9 @@ jobs:
             EOF
 
             echo "=== Docker Compose 배포 ==="
+            # 6379 포트 사용 중인 프로세스 강제 종료
+            sudo lsof -ti:6379 | xargs -r sudo kill -9 || true
+
             # Docker Compose 설치 확인 및 명령어 결정
             if command -v docker-compose >/dev/null 2>&1; then
               COMPOSE_CMD="docker-compose"
