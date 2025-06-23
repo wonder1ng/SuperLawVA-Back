@@ -14,6 +14,7 @@ import com.superlawva.domain.user.service.UserService;
 import com.superlawva.global.response.ApiResponse;
 import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
+import com.superlawva.global.security.util.AESUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -52,6 +54,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final HashUtil hashUtil;
+    private final AESUtil aesUtil;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
@@ -997,5 +1000,50 @@ public class AuthController {
         } catch (Exception e) {
             throw new RuntimeException("소셜 로그인 완료 처리 중 오류가 발생했습니다.", e);
         }
+    }
+
+    @GetMapping("/health")
+    @Operation(summary = "🩺 서버 상태 확인", description = "데이터베이스 연결과 AES 암호화 동작을 확인합니다.")
+    public ApiResponse<Map<String, Object>> healthCheck() {
+        Map<String, Object> health = new HashMap<>();
+        
+        try {
+            // 데이터베이스 연결 테스트
+            long userCount = userRepository.count();
+            health.put("database", "OK - Users: " + userCount);
+        } catch (Exception e) {
+            health.put("database", "ERROR: " + e.getMessage());
+        }
+        
+        try {
+            // SHA-256 해시 테스트
+            String testText = "test";
+            String hashed = hashUtil.hash(testText);
+            health.put("hash", "OK - Hash: " + hashed.substring(0, 8) + "...");
+        } catch (Exception e) {
+            health.put("hash", "ERROR: " + e.getMessage());
+        }
+        
+        try {
+            // AES 암호화 테스트
+            String testText = "test";
+            String encrypted = aesUtil.encrypt(testText);
+            String decrypted = aesUtil.decrypt(encrypted);
+            health.put("aes", "OK - Encrypt/Decrypt: " + decrypted);
+        } catch (Exception e) {
+            health.put("aes", "ERROR: " + e.getMessage());
+        }
+        
+        try {
+            // JWT 토큰 테스트
+            String testToken = jwtTokenProvider.createToken("test@example.com", 1L);
+            boolean isValid = jwtTokenProvider.validateToken(testToken);
+            health.put("jwt", "OK - Token valid: " + isValid);
+        } catch (Exception e) {
+            health.put("jwt", "ERROR: " + e.getMessage());
+        }
+        
+        health.put("timestamp", java.time.LocalDateTime.now().toString());
+        return ApiResponse.onSuccess(health);
     }
 } 

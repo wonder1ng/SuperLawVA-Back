@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  # Redis만 컨테이너로 사용 (RDS MySQL 사용으로 db 제거)
+  redis:
+    image: redis:7-alpine
+    container_name: superlawva-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks: [app-network]
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+
+  app:
+    image: ${ECR_REGISTRY}/superlawva-backend:${IMAGE_TAG:-latest}
+    container_name: superlawva-app
+    restart: unless-stopped
+    depends_on: [redis]
+    env_file: .env
+    ports:
+      - "8080:8080"
+    networks: [app-network]
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -21,7 +21,7 @@ public class AESUtil {
     private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
     
-    @Value("${aes.secret-key:SuperLawVA_AES_Secret_Key_12345678}")
+    @Value("${aes.secret-key}")
     private String secretKey;
 
     /**
@@ -114,14 +114,17 @@ public class AESUtil {
     }
 
     private SecretKeySpec createSecretKey() {
-        // 32바이트 키 생성 (AES-256용)
-        byte[] keyBytes = new byte[32];
-        byte[] secretBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-        
-        // 키가 32바이트보다 짧으면 패딩, 길면 자르기
-        System.arraycopy(secretBytes, 0, keyBytes, 0, Math.min(secretBytes.length, 32));
-        
-        return new SecretKeySpec(keyBytes, ALGORITHM);
+        try {
+            // Base64로 인코딩된 키를 디코딩
+            byte[] keyBytes = Base64.getDecoder().decode(secretKey);
+            return new SecretKeySpec(keyBytes, ALGORITHM);
+        } catch (IllegalArgumentException e) {
+            // Base64가 아닌 경우 기존 방식 사용 (fallback)
+            byte[] keyBytes = new byte[32];
+            byte[] secretBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            System.arraycopy(secretBytes, 0, keyBytes, 0, Math.min(secretBytes.length, 32));
+            return new SecretKeySpec(keyBytes, ALGORITHM);
+        }
     }
 
     /**

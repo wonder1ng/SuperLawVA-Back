@@ -26,7 +26,28 @@ public class JwtTokenProvider {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("❌ jwt.secret is missing. Check environment variables or .env file.");
         }
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        
+        try {
+            // Base64로 인코딩된 키 디코딩 시도
+            byte[] keyBytes = java.util.Base64.getDecoder().decode(secret);
+            if (keyBytes.length >= 32) { // 최소 256비트
+                this.key = Keys.hmacShaKeyFor(keyBytes);
+                return;
+            }
+        } catch (IllegalArgumentException e) {
+            // Base64가 아닌 경우 문자열로 처리
+        }
+        
+        // 문자열 키를 바이트로 변환 (최소 32바이트 보장)
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            // 키가 32바이트보다 짧으면 패딩
+            byte[] paddedKey = new byte[32];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, keyBytes.length);
+            this.key = Keys.hmacShaKeyFor(paddedKey);
+        } else {
+            this.key = Keys.hmacShaKeyFor(keyBytes);
+        }
     }
 
     public String createToken(String email, Long userId) {
