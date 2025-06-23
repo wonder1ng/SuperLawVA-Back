@@ -4,6 +4,11 @@ on:
   push:
     branches: [back/production]
 
+# 동일한 브랜치에서 새 워크플로우가 시작되면 이전 워크플로우 취소
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   AWS_REGION: ap-northeast-2
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
