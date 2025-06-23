@@ -6,6 +6,7 @@ import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.global.security.util.JwtTokenProvider;
+import com.superlawva.global.security.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final HashUtil hashUtil;
 
     @Override
     @Transactional
@@ -30,8 +32,11 @@ public class UserServiceImpl implements UserService {
             throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
         }
         String hashedPassword = passwordEncoder.encode(userRequestDTO.getPassword());
+        String emailHash = hashUtil.hash(userRequestDTO.getEmail());
+        
         User user = User.builder()
                 .email(userRequestDTO.getEmail())
+                .emailHash(emailHash)
                 .password(hashedPassword)
                 .name(userRequestDTO.getName())
                 .provider("LOCAL")
