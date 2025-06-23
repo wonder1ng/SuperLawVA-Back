@@ -167,17 +167,28 @@ jobs:
             # 로그 확인
             echo "=== 배포 완료 - 로그 확인 ==="
             sleep 10
-            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=20 app
+            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=50 app
 
             # 헬스체크
             echo "=== 헬스체크 ==="
-            for i in {1..6}; do
+            echo "컨테이너 상태 확인:"
+            $COMPOSE_CMD -f docker-compose.prod.yml ps
+
+            echo "더 많은 로그 확인:"
+            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=100 app
+
+            for i in {1..10}; do
+              echo "헬스체크 시도 $i/10..."
               if curl -f http://localhost:8080/auth/health; then
                 echo "✅ 애플리케이션이 정상적으로 시작되었습니다!"
                 break
               else
-                echo "⏳ 애플리케이션 시작 대기 중... ($i/6)"
-                sleep 10
+                echo "⏳ 애플리케이션 시작 대기 중... ($i/10)"
+                if [ $i -eq 5 ]; then
+                  echo "=== 중간 로그 확인 ==="
+                  $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=50 app
+                fi
+                sleep 15
               fi
             done
 
