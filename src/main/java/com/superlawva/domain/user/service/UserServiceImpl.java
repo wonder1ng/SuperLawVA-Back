@@ -149,6 +149,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public LoginResponseDTO login(LoginRequestDTO request) {
         String emailHash = hashUtil.hash(request.getEmail());
         User user = userRepository.findByEmailHash(emailHash)
@@ -158,16 +159,19 @@ public class UserServiceImpl implements UserService {
             throw new BaseException(ErrorStatus._PASSWORD_NOT_MATCH);
         }
 
-        String token = jwtTokenProvider.createToken(user.getEmail());
-        
-        return LoginResponseDTO.builder()
-                .message("Login success")
-                .userName(user.getNickname())
-                .userId(user.getId().toString())
-                .JWTtoken(token)
+        String accessToken = jwtTokenProvider.createToken(user.getEmail());
+
+        LoginResponseDTO.UserInfoDTO userInfo = LoginResponseDTO.UserInfoDTO.builder()
+                .email(user.getEmail())
+                .nickname(user.getNickname())
                 .notification(getNotificationCounts(user.getId()))
                 .contract(getRecentContract(user.getId()))
                 .recentChat(getRecentChats(user.getId()))
+                .build();
+
+        return LoginResponseDTO.builder()
+                .accessToken(accessToken)
+                .userInfo(userInfo)
                 .build();
     }
 
