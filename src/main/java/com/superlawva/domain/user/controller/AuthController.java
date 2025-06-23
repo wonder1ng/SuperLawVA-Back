@@ -647,7 +647,7 @@ public class AuthController {
         LoginResponseDTO loginResponse = LoginResponseDTO.builder()
                 .token(jwtToken)
                 .email(user.getEmail())
-                .nickname(user.getName())
+                .userName(user.getName())
                 .provider(user.getProvider())
                 .build();
         
@@ -986,7 +986,7 @@ public class AuthController {
             LoginResponseDTO loginResponse = LoginResponseDTO.builder()
                     .token(jwtToken)
                     .email(user.getEmail())
-                    .nickname(user.getName())
+                    .userName(user.getName())
                     .provider(user.getProvider())
                     .build();
             
