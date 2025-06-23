@@ -31,6 +31,11 @@ public class AESUtil {
      */
     public String encrypt(String plainText) {
         try {
+            // null 체크 추가
+            if (plainText == null) {
+                plainText = "";
+            }
+            
             SecretKeySpec secretKeySpec = createSecretKey();
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
@@ -49,6 +54,11 @@ public class AESUtil {
      */
     public String decrypt(String encryptedText) {
         try {
+            // null 체크 추가
+            if (encryptedText == null || encryptedText.trim().isEmpty()) {
+                return "";
+            }
+            
             SecretKeySpec secretKeySpec = createSecretKey();
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);

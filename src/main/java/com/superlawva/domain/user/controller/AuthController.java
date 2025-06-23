@@ -635,6 +635,7 @@ public class AuthController {
                             .email(email)
                             .emailHash(newEmailHash)
                             .name(name)
+                            .nickname(name)
                             .provider("NAVER")
                             .role(User.Role.USER)
                             .emailVerified(true)
@@ -964,6 +965,7 @@ public class AuthController {
                                 .email(request.getEmail())
                                 .emailHash(newEmailHash)
                                 .name(nickname)
+                                .nickname(nickname)
                                 .provider(provider)
                                 .role(User.Role.USER)
                                 .emailVerified(true);

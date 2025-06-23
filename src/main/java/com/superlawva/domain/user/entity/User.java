@@ -48,6 +48,9 @@ public class User {
     @Convert(converter = AesCryptoConverter.class)
     private String name;
 
+    @Column(nullable = false)  // DB 스키마와 일치하도록 수정
+    private String nickname;
+
     @Column(nullable = false)
     private String provider; // LOCAL, KAKAO, NAVER
 

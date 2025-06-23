@@ -8,6 +8,7 @@ import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import com.superlawva.global.security.util.HashUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,6 +30,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void register(UserRequestDTO userRequestDTO) {
+        log.info("🔍 회원가입 디버그 - name = {}, email = {}", userRequestDTO.getName(), userRequestDTO.getEmail());
+        
         String emailHash = hashUtil.hash(userRequestDTO.getEmail());
         if (userRepository.existsByEmailHash(emailHash)) {
             throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
@@ -39,6 +43,7 @@ public class UserServiceImpl implements UserService {
                 .emailHash(emailHash)
                 .password(hashedPassword)
                 .name(userRequestDTO.getName())
+                .nickname(userRequestDTO.getName())  // nickname을 name과 동일하게 설정
                 .provider("LOCAL")
                 .role(User.Role.USER)
                 .build();
@@ -128,6 +133,7 @@ public class UserServiceImpl implements UserService {
                             .email(naverLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
                             .name(naverLoginRequestDTO.getName())
+                            .nickname(naverLoginRequestDTO.getName())
                             .provider("NAVER")
                             .role(User.Role.USER)
                             .emailVerified(true)
