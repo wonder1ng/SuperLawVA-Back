@@ -161,17 +161,12 @@ public class UserServiceImpl implements UserService {
 
         String accessToken = jwtTokenProvider.createToken(user.getEmail());
 
-        LoginResponseDTO.UserInfoDTO userInfo = LoginResponseDTO.UserInfoDTO.builder()
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .notification(getNotificationCounts(user.getId()))
-                .contract(getRecentContract(user.getId()))
-                .recentChat(getRecentChats(user.getId()))
-                .build();
-
         return LoginResponseDTO.builder()
-                .accessToken(accessToken)
-                .userInfo(userInfo)
+                .token(accessToken)
+                .userName(user.getNickname())
+                .notification(getNotificationCounts(user.getId()))
+                .contractArray(getRecentContract(user.getId()))
+                .recentChat(getRecentChats(user.getId()))
                 .build();
     }
 
@@ -190,21 +185,18 @@ public class UserServiceImpl implements UserService {
     }
 
     // 계약 정보 조회 메서드 (하드코딩)
-    private LoginResponseDTO.ContractInfo getRecentContract(Long userId) {
+    private List<LoginResponseDTO.ContractInfo> getRecentContract(Long userId) {
         try {
-            return LoginResponseDTO.ContractInfo.builder()
+            LoginResponseDTO.ContractInfo contractInfo = LoginResponseDTO.ContractInfo.builder()
+                    ._id("asdasd")
                     .title("월세 임대차 계약서")
                     .state("진행중")
                     .address("서울시 강남구 테헤란로 123")
                     .createdAt("2025.03.22")
                     .build();
+            return List.of(contractInfo);
         } catch (Exception e) {
-            return LoginResponseDTO.ContractInfo.builder()
-                    .title("임대차 계약서")
-                    .state("정보 없음")
-                    .address("계약 정보를 불러올 수 없습니다")
-                    .createdAt("정보 없음")
-                    .build();
+            return List.of();
         }
     }
 
@@ -214,15 +206,15 @@ public class UserServiceImpl implements UserService {
             return List.of(
                     LoginResponseDTO.RecentChat.builder()
                             ._id("1")
-                            .title("제목1")
+                            .title("집 주인이 보증금 안 돌려줘요.")
                             .build(),
                     LoginResponseDTO.RecentChat.builder()
                             ._id("2")
-                            .title("제목2")
+                            .title("전입 신고 방법 알려줘")
                             .build(),
                     LoginResponseDTO.RecentChat.builder()
                             ._id("3")
-                            .title("제목3")
+                            .title("묵시적 갱신이 뭔가요")
                             .build()
             );
         } catch (Exception e) {
