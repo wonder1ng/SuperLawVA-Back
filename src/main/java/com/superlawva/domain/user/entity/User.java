@@ -1,6 +1,6 @@
 package com.superlawva.domain.user.entity;
 
-import com.superlawva.global.security.converter.AesCryptoConverter;
+// import com.superlawva.global.security.converter.AesCryptoConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,14 +38,14 @@ public class User {
     private String emailHash;
 
     @Column(nullable = false)
-    @Convert(converter = AesCryptoConverter.class)
+    // @Convert(converter = AesCryptoConverter.class) // AES 암호화 임시 비활성화
     private String email;
 
     @Column(nullable = true)  // 소셜 로그인 사용자는 password가 null일 수 있음
     private String password;
 
     @Column(nullable = false)
-    @Convert(converter = AesCryptoConverter.class)
+    // @Convert(converter = AesCryptoConverter.class) // AES 암호화 임시 비활성화
     private String name;
 
     @Column(nullable = false)  // DB 스키마와 일치하도록 수정

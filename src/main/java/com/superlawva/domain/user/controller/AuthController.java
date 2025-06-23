@@ -1024,6 +1024,9 @@ public class AuthController {
             health.put("hash", "ERROR: " + e.getMessage());
         }
         
+        // AES 암호화 테스트 임시 비활성화
+        health.put("aes", "DISABLED - AES encryption temporarily disabled");
+        /*
         try {
             // AES 암호화 테스트
             String testText = "test";
@@ -1033,6 +1036,7 @@ public class AuthController {
         } catch (Exception e) {
             health.put("aes", "ERROR: " + e.getMessage());
         }
+        */
         
         try {
             // JWT 토큰 테스트
