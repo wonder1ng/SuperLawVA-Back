@@ -82,6 +82,7 @@ public class AuthController {
         **주의사항:**
         - 이메일은 중복될 수 없습니다
         - 비밀번호는 암호화되어 저장됩니다
+        - 비밀번호 복잡성 검증은 프론트엔드에서 처리됩니다
         - 회원가입 후 바로 로그인하려면 `/auth/login` API를 사용하세요
         """
     )
@@ -261,7 +262,7 @@ public class AuthController {
                         "code": "200",
                         "message": "요청에 성공했습니다.",
                         "result": {
-                            "authUrl": "https://kauth.kakao.com/oauth/authorize?client_id=...&redirect_uri=...&response_type=code&scope=profile_nickname,account_email"
+                            "authUrl": "https://kauth.kakao.com/oauth/authorize?client_id=...&redirect_uri=...&response_type=code&scope=profile_nickname"
                         }
                     }
                     """
@@ -291,7 +292,7 @@ public class AuthController {
                 .queryParam("client_id", kakaoClientId)
                 .queryParam("redirect_uri", kakaoRedirectUri)
                 .queryParam("response_type", "code")
-                .queryParam("scope", "profile_nickname,account_email")
+                .queryParam("scope", "profile_nickname")
                 .build()
                 .toUriString();
 
@@ -380,15 +381,14 @@ public class AuthController {
         카카오 OAuth2 인증 후 콜백을 처리합니다.
         
         **⚠️ 중요한 변경사항:**
-        카카오에서 이메일 정보를 제공하지 않는 경우가 많아서, 
-        이메일을 별도로 입력받는 2단계 프로세스로 변경되었습니다.
+        카카오에서 이메일 권한을 요청하지 않습니다.
+        대신 프론트엔드에서 이메일을 직접 입력받는 2단계 프로세스로 구현되었습니다.
         
         **동작 과정:**
         1. 카카오에서 인가 코드(code)를 받습니다
         2. 인가 코드로 카카오 액세스 토큰을 요청합니다
-        3. 액세스 토큰으로 카카오 사용자 정보를 조회합니다
-        4-A. 이메일이 있는 경우: JWT 토큰을 바로 발급
-        4-B. 이메일이 없는 경우: 임시 토큰 발급 후 이메일 입력 대기
+        3. 액세스 토큰으로 카카오 사용자 정보(닉네임)를 조회합니다
+        4. 임시 토큰을 발급하고 이메일 입력 요청
         
         **프론트엔드 처리 예시:**
         ```javascript
@@ -412,45 +412,22 @@ public class AuthController {
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200", 
-            description = "✅ 카카오 로그인 성공 (이메일 있는 경우)",
+            description = "⏳ 이메일 입력 필요 (임시 토큰 발급)",
             content = @Content(
-                schema = @Schema(implementation = LoginResponseDTO.class),
+                schema = @Schema(implementation = SocialLoginTempDTO.class),
                 examples = @ExampleObject(
-                    name = "이메일 제공된 경우",
+                    name = "카카오 로그인 성공",
                     value = """
                     {
                         "isSuccess": true,
                         "code": "200",
                         "message": "요청에 성공했습니다.",
                         "result": {
-                            "token": "eyJhbGciOiJIUzI1NiJ9...",
-                            "email": "user@kakao.com",
-                            "nickname": "카카오사용자",
-                            "provider": "KAKAO"
-                        }
-                    }
-                    """
-                )
-            )
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "202", 
-            description = "⏳ 이메일 입력 필요 (카카오에서 이메일 미제공)",
-            content = @Content(
-                schema = @Schema(implementation = SocialLoginTempDTO.class),
-                examples = @ExampleObject(
-                    name = "이메일 입력 필요",
-                    value = """
-                    {
-                        "isSuccess": true,
-                        "code": "202",
-                        "message": "이메일 입력이 필요합니다.",
-                        "result": {
                             "tempToken": "temp_token_abc123",
                             "nickname": "카카오사용자",
                             "provider": "KAKAO",
                             "needEmail": true,
-                            "message": "카카오에서 이메일 정보를 제공하지 않습니다. 이메일을 입력해주세요."
+                            "message": "카카오 로그인이 완료되었습니다. 이메일을 입력해주세요."
                         }
                     }
                     """
@@ -516,46 +493,21 @@ public class AuthController {
         Map<String, Object> kakaoAccount = (Map<String, Object>) userInfo.get("kakao_account");
         Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
         
-        String email = (String) kakaoAccount.get("email");
         String nickname = (String) profile.get("nickname");
         Long kakaoId = ((Number) userInfo.get("id")).longValue();
         
-        // 3. 이메일 여부에 따른 분기 처리
-        if (email == null || email.trim().isEmpty()) {
-            // 이메일이 없는 경우: 임시 토큰 발급
-            String tempToken = jwtTokenProvider.createTempToken(kakaoId.toString(), "KAKAO", nickname);
-            
-            SocialLoginTempDTO tempResponse = SocialLoginTempDTO.builder()
-                    .tempToken(tempToken)
-                    .nickname(nickname)
-                    .provider("KAKAO")
-                    .needEmail(true)
-                    .message("카카오에서 이메일 정보를 제공하지 않습니다. 이메일을 입력해주세요.")
-                    .build();
-            
-            return ApiResponse.onSuccess(tempResponse);
-        } else {
-            // 이메일이 있는 경우: 바로 로그인 처리
-            User user = userRepository.findByEmail(email)
-                    .orElseGet(() -> userRepository.save(User.builder()
-                            .email(email)
-                            .name(nickname)
-                            .provider("KAKAO")
-                            .role(User.Role.USER)
-                            .emailVerified(true)
-                            .build()));
-            
-            String jwtToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
-            
-            LoginResponseDTO response = LoginResponseDTO.builder()
-                    .token(jwtToken)
-                    .email(user.getEmail())
-                    .nickname(user.getName())
-                    .provider(user.getProvider())
-                    .build();
-            
-            return ApiResponse.onSuccess(response);
-        }
+        // 3. 이메일 권한을 요청하지 않으므로 항상 임시 토큰 발급
+        String tempToken = jwtTokenProvider.createTempToken(kakaoId.toString(), "KAKAO", nickname);
+        
+        SocialLoginTempDTO tempResponse = SocialLoginTempDTO.builder()
+                .tempToken(tempToken)
+                .nickname(nickname)
+                .provider("KAKAO")
+                .needEmail(true)
+                .message("카카오 로그인이 완료되었습니다. 이메일을 입력해주세요.")
+                .build();
+        
+        return ApiResponse.onSuccess(tempResponse);
     }
 
     @GetMapping("/oauth2/callback/naver")
