@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class UserResponseDTO {
     private Long   id;
     private String email;
-    private String nickname;
+    private String name;
     private User.Role role;
     private LocalDateTime createdAt;
     private boolean emailVerified;
@@ -21,7 +21,7 @@ public class UserResponseDTO {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .nickname(user.getNickname())
+                .name(user.getName())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .emailVerified(user.isEmailVerified())
@@ -32,7 +32,7 @@ public class UserResponseDTO {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .nickname(user.getNickname())
+                .name(user.getName())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .emailVerified(user.isEmailVerified())

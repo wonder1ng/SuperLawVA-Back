@@ -79,21 +79,13 @@ public class UserController {
         return ApiResponse.onSuccess(null);
     }
 
-    @PutMapping("/password")
-    @Operation(summary = "비밀번호 변경", description = "현재 로그인한 사용자의 비밀번호를 변경합니다.")
+    @PatchMapping("/me/password")
     @SecurityRequirement(name = "JWT")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "비밀번호 변경 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "현재 비밀번호 불일치 또는 새 비밀번호 확인 불일치"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 정보를 찾을 수 없음")
-    })
-    public ApiResponse<Void> changePassword(@Parameter(hidden = true) @LoginUser User user, @RequestBody @Valid PasswordChangeRequestDTO request) {
-        if (user == null) {
-            throw new BaseException(ErrorStatus._UNAUTHORIZED);
-        }
-        userService.changePassword(user.getId(), request);
-        return ApiResponse.onSuccess(null);
+    @Operation(summary = "내 비밀번호 변경", description = "로그인한 사용자의 비밀번호를 변경합니다.")
+    public ApiResponse<String> changePassword(@Parameter(hidden = true) @LoginUser User user,
+                                              @RequestBody @Valid PasswordChangeRequestDTO request) {
+        userService.changePassword(user, request);
+        return ApiResponse.onSuccess("비밀번호가 성공적으로 변경되었습니다.");
     }
     
     // ================================================================================================================

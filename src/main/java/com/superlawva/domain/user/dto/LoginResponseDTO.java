@@ -2,13 +2,17 @@ package com.superlawva.domain.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "로그인 응답 DTO")
 public class LoginResponseDTO {
 
@@ -22,7 +26,10 @@ public class LoginResponseDTO {
     private String email;
 
     @Schema(description = "사용자 닉네임", example = "아무개")
-    private String userName;
+    private String nickname;
+
+    @Schema(description = "사용자 제공자", example = "Google")
+    private String provider;
 
     @Schema(description = "알림 정보 (샘플 데이터)", example = "[0, 1, 2]")
     private List<Integer> notification;

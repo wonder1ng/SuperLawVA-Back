@@ -1,10 +1,13 @@
 package com.superlawva.global.security.handler;
 
+import com.superlawva.domain.user.entity.User;
+import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtProvider;
+    private final UserRepository userRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -30,12 +34,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String email = extractEmail(registrationId, oauthUser);
 
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
         // 토큰 생성
-        String token = jwtProvider.createToken(email);
+        String token = jwtProvider.createToken(email, user.getId());
 
         // 프론트엔드 URL로 리다이렉트 (환경변수로 설정 가능)
         String frontendUrl = "http://localhost:3000"; // 개발용, 운영시에는 실제 도메인
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/login/success")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/auth/callback")
                 .queryParam("token", token)
                 .build()
                 .encode(StandardCharsets.UTF_8)

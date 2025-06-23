@@ -22,15 +22,83 @@ public class OpenApiConfig {
                 .description("""
                         ## 🔑 JWT 토큰 발급 가이드
                         
-                        API를 테스트하려면 JWT 토큰이 필요합니다. 토큰은 다음 두 가지 방법으로 발급받을 수 있습니다.
+                        API를 테스트하려면 JWT 토큰이 필요합니다. 토큰은 다음 방법들로 발급받을 수 있습니다.
                         
                         ### 1. 일반 로그인 API 사용
                         - `POST /auth/login` API에 이메일과 비밀번호로 요청하여 토큰을 발급받습니다.
                         
-                        ### 2. 소셜 로그인 (카카오)
-                        - 웹 브라우저에서 `GET /oauth2/authorization/kakao` 주소로 직접 이동하여 카카오 로그인을 진행합니다.
-                        - 로그인 성공 시, 백엔드 서버는 프론트엔드 리다이렉트 주소 (`http://localhost:3000/login/success`)로 이동시키며, URL에 토큰 정보를 포함하여 전달합니다.
-                        - **리다이렉트 URL 예시**: `http://localhost:3000/login/success?token=eyJhbGciOiJIUzI1NiJ9...`
+                        ### 2. 소셜 로그인 (OAuth2 URL 방식) - **추천**
+                        **카카오 로그인:**
+                        1. `GET /auth/oauth2/kakao` API를 호출하여 카카오 인증 URL을 받습니다
+                        2. 받은 URL로 사용자를 리다이렉트합니다
+                        3. 카카오 로그인 완료 후 자동으로 콜백 URL로 리다이렉트되며 JWT 토큰을 받습니다
+                        
+                        **네이버 로그인:**
+                        1. `GET /auth/oauth2/naver` API를 호출하여 네이버 인증 URL을 받습니다
+                        2. 받은 URL로 사용자를 리다이렉트합니다
+                        3. 네이버 로그인 완료 후 자동으로 콜백 URL로 리다이렉트되며 JWT 토큰을 받습니다
+                        
+                        ### 3. 소셜 로그인 (SDK 방식)
+                        **카카오 SDK 사용:**
+                        - 카카오 SDK로 인가 코드를 받은 후 `POST /auth/login/kakao` API로 전송
+                        
+                        **네이버 SDK 사용:**
+                        - 네이버 SDK로 인가 코드를 받은 후 `POST /auth/login/naver` API로 전송
+                        
+                        ---
+                        
+                        ## 🚀 소셜 로그인 구현 가이드
+                        
+                        ### OAuth2 URL 방식 (추천)
+                        ```javascript
+                        // 카카오 로그인
+                        const response = await fetch('/auth/oauth2/kakao');
+                        const { authUrl } = await response.json();
+                        window.location.href = authUrl;
+                        
+                        // 네이버 로그인
+                        const response = await fetch('/auth/oauth2/naver');
+                        const { authUrl } = await response.json();
+                        window.location.href = authUrl;
+                        ```
+                        
+                        ### SDK 방식
+                        ```javascript
+                        // 카카오 SDK
+                        Kakao.Auth.login({
+                            success: function(authObj) {
+                                fetch('/auth/login/kakao', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        authorizationCode: authObj.code
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    localStorage.setItem('token', data.result.token);
+                                });
+                            }
+                        });
+                        
+                        // 네이버 SDK
+                        naverLogin.getLoginStatus(function(status) {
+                            if (status) {
+                                fetch('/auth/login/naver', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        authorizationCode: naverLogin.authorizationCode,
+                                        state: naverLogin.state
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    localStorage.setItem('token', data.result.token);
+                                });
+                            }
+                        });
+                        ```
                         
                         ---
                         
@@ -44,8 +112,16 @@ public class OpenApiConfig {
                         
                         프론트엔드에서는 이 필드들이 존재하고, 해당 DTO 형식에 맞게 데이터가 들어온다고 가정하고 UI를 우선 구현할 수 있습니다. 
                         실제 데이터 연동은 추후 백엔드에서 구현될 예정입니다.
+                        
+                        ---
+                        
+                        ## 🔒 인증이 필요한 API 사용법
+                        
+                        1. 위의 방법 중 하나로 JWT 토큰을 발급받습니다
+                        2. Swagger 우측 상단의 **"Authorize"** 버튼을 누릅니다
+                        3. `Bearer {복사한_토큰}` 형식으로 붙여넣어 인증을 완료합니다
+                        4. 이제 자물쇠(🔒)가 걸린 모든 API를 자유롭게 테스트할 수 있습니다
                         """);
-
 
         return new OpenAPI()
                 .addServersItem(new Server().url("http://43.203.127.128:8080").description("운영 서버"))

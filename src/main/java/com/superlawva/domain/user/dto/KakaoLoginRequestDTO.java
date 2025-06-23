@@ -15,4 +15,7 @@ public class KakaoLoginRequestDTO {
     @NotBlank(message = "인가 코드는 필수입니다.")
     @Schema(description = "카카오 서버로부터 받은 인가 코드(Authorization Code)", requiredMode = Schema.RequiredMode.REQUIRED, example = "abcdefg1234567hijklmnop890")
     private String authorizationCode;
+
+    private String email;
+    private String nickname;
 } 

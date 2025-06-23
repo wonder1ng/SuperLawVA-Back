@@ -14,8 +14,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @NoArgsConstructor
 public class UserRequestDTO {
 
-    @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
-    private String nickname;
+    @NotBlank(message = "이름은 필수 입력 항목입니다.")
+    private String name;
 
     @NotBlank(message = "이메일은 필수 입력 항목입니다.")
     @Email(message = "유효한 이메일 주소를 입력해주세요.")
@@ -28,7 +28,7 @@ public class UserRequestDTO {
 
     public User toEntity() {
         return User.builder()
-                .nickname(nickname)
+                .name(name)
                 .email(email)
                 .password(password)
                 .build();

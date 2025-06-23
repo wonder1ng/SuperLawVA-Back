@@ -2,8 +2,6 @@ package com.superlawva.global.config;
 
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.security.filter.JwtAuthFilter;
-import com.superlawva.global.security.handler.OAuth2AuthenticationSuccessHandler;
-import com.superlawva.global.security.service.CustomOAuth2UserService;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +29,6 @@ import static org.springframework.http.HttpMethod.POST;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final UserRepository userRepository;
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -63,8 +59,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/signup",
                                 "/auth/login",
-                                "/login/oauth2/code/*",
-                                "/oauth2/**",
+                                "/auth/login/kakao",
+                                "/auth/login/naver",
+                                "/auth/oauth2/**",
+                                "/auth/oauth2/callback/**",
                                 "/verify/**",
                                 "/api/email/send",
                                 "/api/email/verify",
@@ -79,18 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(POST, "/users").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login")
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService)
-                        )
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
-                // HTTPS 강제 설정 임시 비활성화 (배포 후 환경변수로 활성화 가능)
-                // .requiresChannel(channel -> channel
-                //         .anyRequest().requiresSecure()
-                // );
 
         return http.build();
     }

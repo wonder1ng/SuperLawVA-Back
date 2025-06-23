@@ -19,4 +19,7 @@ public class NaverLoginRequestDTO {
     @NotBlank(message = "state 값은 필수입니다.")
     @Schema(description = "CSRF 공격 방지를 위한 상태 토큰", requiredMode = Schema.RequiredMode.REQUIRED, example = "hjklnmop890")
     private String state;
+
+    private String email;
+    private String name;
 } 

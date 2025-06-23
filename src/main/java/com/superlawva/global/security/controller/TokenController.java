@@ -2,6 +2,8 @@ package com.superlawva.global.security.controller;
 
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
+import com.superlawva.global.response.ApiResponse;
+import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,9 +16,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Tag(name = "⚠️ Test & Tools", description = "개발 및 테스트용 API")
 @RequiredArgsConstructor
@@ -72,5 +79,26 @@ public class TokenController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("해당 ID의 사용자를 찾을 수 없습니다.");
         }
+    }
+
+    @PostMapping("/regenerate")
+    public ApiResponse<Map<String, String>> regenerateToken(HttpServletRequest request) {
+        // 1. "Authorization" 헤더에서 리프레시 토큰 추출
+        String refreshToken = jwtTokenProvider.resolveToken(request);
+
+        // 2. 리프레시 토큰 유효성 검증
+        if (refreshToken != null && jwtTokenProvider.validate(refreshToken)) {
+            // 3. 토큰에서 이메일 추출
+            String email = jwtTokenProvider.getEmail(refreshToken);
+            // 4. 이메일로 사용자 정보 조회
+            User user = userRepository.findByEmail(email).orElse(null);
+            // 5. 새로운 액세스 토큰 생성
+            String newAccessToken = jwtTokenProvider.createToken(user.getEmail(), user.getId());
+            // 6. 새로운 액세스 토큰 반환
+            return ApiResponse.onSuccess(Map.of("accessToken", newAccessToken));
+        }
+
+        // 7. 유효하지 않은 토큰일 경우 에러 응답
+        throw new BaseException(ErrorStatus.INVALID_OR_EXPIRED_TOKEN);
     }
 }
