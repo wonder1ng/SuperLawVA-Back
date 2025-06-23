@@ -55,8 +55,10 @@ jobs:
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
           KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          NAVER_REDIRECT_URI: ${{ secrets.NAVER_REDIRECT_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           AES_SECRET_KEY: ${{ secrets.AES_SECRET_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -176,7 +178,7 @@ jobs:
           fi
 
           echo "=== 애플리케이션 실행 ==="
-          nohup java -jar \
+          nohup java \
             -Dspring.profiles.active=prod \
             -Xmx512m -Xms256m \
             -DDATABASE_URL="$DATABASE_URL" \
@@ -188,11 +190,13 @@ jobs:
             -DMAIL_PASSWORD="$MAIL_PASSWORD" \
             -DKAKAO_CLIENT_ID="$KAKAO_CLIENT_ID" \
             -DKAKAO_CLIENT_SECRET="$KAKAO_CLIENT_SECRET" \
+            -DKAKAO_REDIRECT_URI="$KAKAO_REDIRECT_URI" \
             -DNAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
             -DNAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
+            -DNAVER_REDIRECT_URI="$NAVER_REDIRECT_URI" \
             -DREDIS_HOST=localhost \
             -DREDIS_PORT=6380 \
-            /home/ubuntu/app.jar >> /home/ubuntu/log.txt 2>&1 &
+            -jar /home/ubuntu/app.jar >> /home/ubuntu/log.txt 2>&1 &
 
           APP_PID=$!
           echo "PID: $APP_PID"
@@ -233,8 +237,10 @@ jobs:
              MAIL_PASSWORD='$MAIL_PASSWORD' \
              KAKAO_CLIENT_ID='$KAKAO_CLIENT_ID' \
              KAKAO_CLIENT_SECRET='$KAKAO_CLIENT_SECRET' \
+             KAKAO_REDIRECT_URI='$KAKAO_REDIRECT_URI' \
              NAVER_CLIENT_ID='$NAVER_CLIENT_ID' \
              NAVER_CLIENT_SECRET='$NAVER_CLIENT_SECRET' \
+             NAVER_REDIRECT_URI='$NAVER_REDIRECT_URI' \
              JWT_SECRET='$JWT_SECRET' \
              AES_SECRET_KEY='$AES_SECRET_KEY' \
              /home/ubuntu/deploy.sh"
