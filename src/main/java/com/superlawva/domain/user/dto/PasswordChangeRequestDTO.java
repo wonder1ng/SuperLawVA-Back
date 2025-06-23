@@ -10,13 +10,14 @@ import lombok.Setter;
 public class PasswordChangeRequestDTO {
 
     @NotBlank(message = "현재 비밀번호를 입력해주세요.")
-    @Schema(description = "현재 비밀번호", example = "currentPassword123")
+    @Schema(description = "현재 비밀번호", example = "currentPassword123!")
     private String currentPassword;
 
     @NotBlank(message = "새로운 비밀번호를 입력해주세요.")
-    @Schema(description = "새로운 비밀번호", example = "newPassword456")
+    @Schema(description = "새로운 비밀번호", example = "newPassword123!")
     private String newPassword;
 
     @NotBlank(message = "새 비밀번호 확인을 입력해주세요.")
-    private String confirmPassword;
+    @Schema(description = "새 비밀번호 확인", example = "newPassword123!")
+    private String confirmNewPassword;
 } 

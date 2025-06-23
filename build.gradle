@@ -40,6 +40,12 @@ dependencies {
     /* ── MySQL ─────────────────────────────────── */
     runtimeOnly 'com.mysql:mysql-connector-j'
 
+    /* ── AWS SDK ───────────────────────────────── */
+    implementation 'software.amazon.awssdk:cloudwatchlogs:2.24.12'
+    implementation 'software.amazon.awssdk:s3:2.24.12'
+    implementation 'software.amazon.awssdk:sts:2.24.12'
+    implementation 'com.cwbase:logback-redis-appender:1.1.5'
+
     /* ── Lombok ────────────────────────────────── */
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

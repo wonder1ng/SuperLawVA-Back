@@ -1,6 +1,6 @@
 package com.superlawva.domain.user.entity;
 
-import com.superlawva.global.security.converter.AesCryptoConverter;
+// import com.superlawva.global.security.converter.AesCryptoConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,15 +38,21 @@ public class User {
     private String emailHash;
 
     @Column(nullable = false)
-    @Convert(converter = AesCryptoConverter.class)
+    // @Convert(converter = AesCryptoConverter.class) // AES 암호화 임시 비활성화
     private String email;
 
     @Column(nullable = true)  // 소셜 로그인 사용자는 password가 null일 수 있음
     private String password;
 
     @Column(nullable = false)
-    @Convert(converter = AesCryptoConverter.class)
+    // @Convert(converter = AesCryptoConverter.class) // AES 암호화 임시 비활성화
+    private String name;
+
+    @Column(nullable = false)  // DB 스키마와 일치하도록 수정
     private String nickname;
+
+    @Column(nullable = false)
+    private String provider; // LOCAL, KAKAO, NAVER
 
     /** USER · ADMIN */
     @Enumerated(EnumType.STRING)
@@ -64,8 +70,6 @@ public class User {
     @Builder.Default
     @Column(nullable = false)
     private boolean emailVerified = false;
-
-    private LocalDateTime deletedAt; // 소프트 삭제용 필드
 
     /* ==================== JPA Life-cycle ==================== */
 
@@ -89,14 +93,15 @@ public class User {
         this.password = password;
     }
 
-    public void changeNickname(String nickname) {
-        if (nickname != null) {
-            this.nickname = nickname;
+    public void changeName(String name) {
+        if (name != null) {
+            this.name = name;
         }
     }
 
-    public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
+    public void updateSnsInfo(String name, String provider) {
+        this.name = name;
+        this.provider = provider;
     }
 }
 

@@ -1,0 +1,202 @@
+name: Deploy Spring Boot to EC2
+
+on:
+  push:
+    branches: [back/production]
+
+# 동일한 브랜치에서 새 워크플로우가 시작되면 이전 워크플로우 취소
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 소스코드 체크아웃
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # 2. JDK 17 설정
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # 3. Gradle 캐시
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 4. Spring Boot 애플리케이션 빌드
+      - name: Build Spring Boot App
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean bootJar -x test
+
+      # 5. AWS 자격증명 설정
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 6. ECR 로그인
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # 7. Docker 이미지 빌드 및 ECR 푸시
+      - name: Build & Push Docker image to ECR
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+
+          echo "Pushing to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "✅ Image pushed successfully"
+          echo "Image URI: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # 8. docker-compose.prod.yml 파일 EC2에 복사
+      - name: Copy docker-compose.prod.yml to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: docker-compose.prod.yml
+          target: /home/ubuntu/
+
+      # 9. EC2에 배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          envs: ECR_REGISTRY,ECR_REPOSITORY,IMAGE_TAG,AWS_REGION
+          script: |
+            set -e
+
+            echo "=== 환경 준비 ==="
+            cd /home/ubuntu
+
+            # ECR 로그인
+            echo "ECR 로그인..."
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            # 환경변수 파일 생성
+            echo "환경변수 설정..."
+            cat > .env << EOF
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            AES_SECRET_KEY=${{ secrets.AES_SECRET_KEY }}
+            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}
+            NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
+            NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
+            FRONTEND_URL=http://43.203.127.128:3000
+            SERVER_PORT=8080
+            ECR_REGISTRY=$ECR_REGISTRY
+            IMAGE_TAG=$IMAGE_TAG
+            EOF
+
+            echo "=== Docker Compose 배포 ==="
+            # 6379/6380 포트 사용 중인 프로세스 강제 종료
+            echo "포트 6379/6380 정리 중..."
+            sudo fuser -k 6379/tcp || true
+            sudo fuser -k 6380/tcp || true
+            sudo lsof -ti:6379 | xargs -r sudo kill -9 || true
+            sudo lsof -ti:6380 | xargs -r sudo kill -9 || true
+
+            # Redis 시스템 서비스 중지 (있다면)
+            sudo systemctl stop redis-server 2>/dev/null || true
+            sudo systemctl stop redis 2>/dev/null || true
+
+            # Redis 관련 Docker 컨테이너 정리
+            docker stop $(docker ps -q --filter "name=redis") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "name=redis") 2>/dev/null || true
+
+            # Docker Compose 설치 확인 및 명령어 결정
+            if command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            elif docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            else
+              echo "Docker Compose를 설치합니다..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+              COMPOSE_CMD="docker-compose"
+            fi
+
+            echo "사용할 Docker Compose 명령어: $COMPOSE_CMD"
+
+            # 기존 컨테이너 중지
+            $COMPOSE_CMD -f docker-compose.prod.yml down || true
+
+            # 새 이미지 풀
+            $COMPOSE_CMD -f docker-compose.prod.yml pull app
+
+            # 새 컨테이너 시작
+            $COMPOSE_CMD -f docker-compose.prod.yml up -d
+
+            # 로그 확인
+            echo "=== 배포 완료 - 실시간 로그 확인 ==="
+            echo "30초간 실시간 로그 모니터링..."
+            timeout 30s $COMPOSE_CMD -f docker-compose.prod.yml logs -f app || true
+
+            echo "=== 최근 로그 확인 ==="
+            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=100 app
+
+            # 헬스체크
+            echo "=== 헬스체크 ==="
+            echo "컨테이너 상태 확인:"
+            $COMPOSE_CMD -f docker-compose.prod.yml ps
+
+            echo "더 많은 로그 확인:"
+            $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=100 app
+
+            for i in {1..3}; do
+              echo "헬스체크 시도 $i/3..."
+              if curl -f -m 150 http://localhost:8080/auth/health; then
+                echo "✅ 애플리케이션이 정상적으로 시작되었습니다!"
+                break
+              else
+                echo "⏳ 애플리케이션 시작 대기 중... ($i/3)"
+                if [ $i -eq 2 ]; then
+                  echo "=== 중간 로그 확인 ($i) ==="
+                  $COMPOSE_CMD -f docker-compose.prod.yml logs --tail=50 app
+                fi
+                sleep 30
+              fi
+            done
+
+            # 정리
+            echo "=== 이미지 정리 ==="
+            docker system prune -f || true
+
+            echo "🎉 배포 완료!"

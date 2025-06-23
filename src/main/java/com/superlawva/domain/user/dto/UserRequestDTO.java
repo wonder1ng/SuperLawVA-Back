@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class UserRequestDTO {
 
     @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
+    @Schema(description = "사용자 닉네임", example = "홍길동")
     private String nickname;
 
     @NotBlank(message = "이메일은 필수 입력 항목입니다.")
@@ -22,12 +23,11 @@ public class UserRequestDTO {
     private String email;
 
     @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$",
-            message = "비밀번호는 8~16자리의 영문, 숫자, 특수문자를 모두 포함해야 합니다.")
     private String password;
 
     public User toEntity() {
         return User.builder()
+                .name(nickname)  // nickname을 name 필드에도 설정
                 .nickname(nickname)
                 .email(email)
                 .password(password)
@@ -38,6 +38,7 @@ public class UserRequestDTO {
     @Setter
     public static class SignUpDTO {
         @NotBlank(message = "닉네임은 필수 입력 항목입니다.")
+        @Schema(description = "사용자 닉네임", example = "홍길동")
         private String nickname;
 
         @NotBlank(message = "이메일은 필수 입력 항목입니다.")
@@ -45,9 +46,10 @@ public class UserRequestDTO {
         private String email;
 
         @NotBlank(message = "비밀번호는 필수 입력 항목입니다.")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$",
-                message = "비밀번호는 8~16자리의 영문, 숫자, 특수문자를 모두 포함해야 합니다.")
         private String password;
+
+        @NotBlank(message = "비밀번호 확인은 필수 입력 항목입니다.")
+        private String confirmPassword;
     }
 
     @Getter

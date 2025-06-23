@@ -14,7 +14,7 @@ spring:
       initialization-fail-timeout: -1
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -22,7 +22,6 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         connection.provider_disables_autocommit: true
         jdbc.time_zone: UTC
-        hbm2ddl.auto: none
     defer-datasource-initialization: true
     open-in-view: false
   sql:
@@ -113,3 +112,7 @@ logging:
     com.superlawva: INFO
     org.springframework.security: WARN
     org.hibernate: WARN
+
+# 테스트 사용자 생성 비활성화 (프로덕션 환경)
+app:
+  create-test-users: false

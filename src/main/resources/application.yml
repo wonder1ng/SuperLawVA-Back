@@ -7,12 +7,14 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+        # soft delete 비활성화
+        globally_quoted_identifiers: false
 
   data:
     redis:
@@ -94,3 +96,26 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+# AWS 설정
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  access-key-id: ${AWS_ACCESS_KEY_ID:}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:superlawva-logs}
+  cloudwatch:
+    log-group-name: ${AWS_CLOUDWATCH_LOG_GROUP:superlawva-application}
+    log-stream-name: ${AWS_CLOUDWATCH_LOG_STREAM:ec2-instance}
+
+# 로깅 설정
+logging:
+  level:
+    com.superlawva.global.security.filter.JwtAuthFilter: INFO
+    org.apache.coyote.http11.Http11Processor: WARN
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
