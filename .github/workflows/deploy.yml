@@ -121,7 +121,7 @@ jobs:
           fi
 
           echo "=== 기존 앱 중지 ==="
-          pkill -f 'java.*app.jar' || true
+          sudo pkill -f 'java.*app.jar' || true
           sleep 2
 
           echo "=== 환경변수 확인 ==="
