@@ -57,6 +57,7 @@ public class LoginResponseDTO {
     @Builder
     @Schema(description = "최근 채팅 정보 (샘플)")
     public static class RecentChat {
+        @JsonProperty("_id")
         @Schema(description = "채팅방 ID", example = "chat-12345")
         private String _id;
         @Schema(description = "채팅방 제목", example = "AI 변호사 챗봇")
