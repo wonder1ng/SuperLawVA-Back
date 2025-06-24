@@ -95,8 +95,7 @@ naver:
 # 🔵 JWT 설정
 jwt:
   secret: ${JWT_SECRET:your_jwt_secret_key_here_minimum_32_characters_required}
-  access-token-validity: 3600000
-  refresh-token-validity: 604800000
+  access-token-validity: 86400000
 
 # AES 양방향 암호화 설정 (개인정보 암호화용)
 aes:
