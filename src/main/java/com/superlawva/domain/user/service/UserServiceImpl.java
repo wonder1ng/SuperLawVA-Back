@@ -32,22 +32,46 @@ public class UserServiceImpl implements UserService {
     public void register(UserRequestDTO userRequestDTO) {
         log.info("🔍 회원가입 디버그 - nickname = {}, email = {}", userRequestDTO.getNickname(), userRequestDTO.getEmail());
         
-        String emailHash = hashUtil.hash(userRequestDTO.getEmail());
+        // 입력값 null 체크 및 기본값 설정
+        String nickname = userRequestDTO.getNickname();
+        String email = userRequestDTO.getEmail();
+        String password = userRequestDTO.getPassword();
+        
+        if (nickname == null || nickname.trim().isEmpty()) {
+            log.error("❌ 닉네임이 null 또는 빈 값입니다.");
+            throw new BaseException(ErrorStatus.NICKNAME_NOT_EXIST);
+        }
+        
+        if (email == null || email.trim().isEmpty()) {
+            log.error("❌ 이메일이 null 또는 빈 값입니다.");
+            throw new BaseException(ErrorStatus._BAD_REQUEST);
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            log.error("❌ 비밀번호가 null 또는 빈 값입니다.");
+            throw new BaseException(ErrorStatus._BAD_REQUEST);
+        }
+        
+        String emailHash = hashUtil.hash(email);
         if (userRepository.existsByEmailHash(emailHash)) {
             throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
         }
-        String hashedPassword = passwordEncoder.encode(userRequestDTO.getPassword());
+        String hashedPassword = passwordEncoder.encode(password);
+        
+        log.info("🔧 User 엔티티 생성 시작 - nickname: {}, email: {}", nickname, email);
         
         User user = User.builder()
-                .email(userRequestDTO.getEmail())
+                .email(email)
                 .emailHash(emailHash)
                 .password(hashedPassword)
-                .name(userRequestDTO.getNickname())  // nickname을 name에도 설정
-                .nickname(userRequestDTO.getNickname())
+                .nickname(nickname)
                 .provider("LOCAL")
                 .role(User.Role.USER)
                 .build();
+        
+        log.info("🔧 User 엔티티 생성 완료, 저장 시작");
         userRepository.save(user);
+        log.info("✅ 회원가입 성공");
     }
 
         @Override
@@ -97,7 +121,6 @@ public class UserServiceImpl implements UserService {
                     return userRepository.save(User.builder()
                             .email(kakaoLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
-                            .name(kakaoLoginRequestDTO.getNickname())
                             .nickname(kakaoLoginRequestDTO.getNickname())
                             .provider("KAKAO")
                             .role(User.Role.USER)
@@ -124,7 +147,6 @@ public class UserServiceImpl implements UserService {
                     return userRepository.save(User.builder()
                             .email(naverLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
-                            .name(naverLoginRequestDTO.getName())
                             .nickname(naverLoginRequestDTO.getName())
                             .provider("NAVER")
                             .role(User.Role.USER)
@@ -175,7 +197,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
         
         if (request.getNickname() != null) {
-            user.changeName(request.getNickname());
+            user.changeNickname(request.getNickname());
         }
         
         userRepository.save(user);
@@ -211,7 +233,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
         
         if (dto.getNickname() != null) {
-            user.changeName(dto.getNickname());
+            user.changeNickname(dto.getNickname());
         }
         if (dto.getEmail() != null) {
             user.changeEmail(dto.getEmail());

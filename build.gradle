@@ -1,35 +1,54 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.3.0'
-    id 'io.spring.dependency-management' version '1.1.4'
-}
-
-java {
-    sourceCompatibility = '17'
+    id 'org.springframework.boot' version '3.4.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.superlawva'
 version = '0.0.1-SNAPSHOT'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
+}
+
+// 🟢 Google Cloud BOM으로 버전 관리 (gRPC 버전 충돌 해결)
+dependencyManagement {
+    imports {
+        mavenBom 'com.google.cloud:libraries-bom:26.28.0'
+        mavenBom 'io.grpc:grpc-bom:1.60.0' // gRPC 버전 통일
+    }
 }
 
 dependencies {
     /* ── Spring Core ───────────────────────────── */
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator' // ✅ 병합
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     implementation 'org.springframework.security:spring-security-config'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
 
     /* ── OpenAPI Docs ──────────────────────────── */
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
     /* ── JWT ───────────────────────────────────── */
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
@@ -37,8 +56,24 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    /* ── MySQL ─────────────────────────────────── */
+    /* ── Database ──────────────────────────────── */
     runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'com.h2database:h2'
+
+    /* ── Google Cloud ──────────────────────────── */
+    // 🟢 Google Cloud - BOM으로 버전 자동 관리
+    implementation 'com.google.cloud:google-cloud-document-ai'
+    implementation 'com.google.cloud:google-cloud-storage'
+    
+    // 🟢 gRPC - BOM으로 버전 통일 (버전 명시 제거)
+    implementation 'io.grpc:grpc-netty-shaded'
+    implementation 'io.grpc:grpc-services'
+    implementation 'com.google.protobuf:protobuf-java'
+
+    /* ── Utils ─────────────────────────────────── */
+    implementation 'commons-io:commons-io:2.15.0'
+    implementation 'org.apache.tika:tika-core:2.9.1'
+    implementation 'io.lettuce:lettuce-core'
 
     /* ── AWS SDK ───────────────────────────────── */
     implementation 'software.amazon.awssdk:cloudwatchlogs:2.24.12'
@@ -47,16 +82,24 @@ dependencies {
     implementation 'com.cwbase:logback-redis-appender:1.1.5'
 
     /* ── Lombok ────────────────────────────────── */
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
 
     /* ── .env 환경변수 ─────────────────────────── */
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
     /* ── Test ──────────────────────────────────── */
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.testcontainers:mysql'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 // ✅ JAR 빌드 설정 추가

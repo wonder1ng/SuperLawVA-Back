@@ -44,10 +44,6 @@ public class User {
     @Column(nullable = true)  // 소셜 로그인 사용자는 password가 null일 수 있음
     private String password;
 
-    @Column(nullable = false)
-    // @Convert(converter = AesCryptoConverter.class) // AES 암호화 임시 비활성화
-    private String name;
-
     @Column(nullable = false)  // DB 스키마와 일치하도록 수정
     private String nickname;
 
@@ -93,14 +89,14 @@ public class User {
         this.password = password;
     }
 
-    public void changeName(String name) {
-        if (name != null) {
-            this.name = name;
+    public void changeNickname(String nickname) {
+        if (nickname != null) {
+            this.nickname = nickname;
         }
     }
 
-    public void updateSnsInfo(String name, String provider) {
-        this.name = name;
+    public void updateSnsInfo(String nickname, String provider) {
+        this.nickname = nickname;
         this.provider = provider;
     }
 }

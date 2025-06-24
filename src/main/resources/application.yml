@@ -1,51 +1,61 @@
+# 🟢 공통 설정 (모든 프로필에 적용)
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/superlawva}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+  profiles:
+    active: prod # 기본값을 local로 설정 (개발용)
 
+  # Bean 오버라이딩 비활성화 (중복 Bean 해결됨)
+  main:
+    allow-bean-definition-overriding: false
+
+  # JPA 공통 설정
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
-        # soft delete 비활성화
-        globally_quoted_identifiers: false
+        use_sql_comments: true
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6380}
+  # 🟢 파일 업로드 설정
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+      enabled: true
 
+  # 🟢 이메일 설정
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME:your_email@gmail.com}
+    password: ${MAIL_PASSWORD:your_app_password}
     properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          debug: true
+        debug: true
 
+  # OAuth2 공통 설정
   security:
     oauth2:
       client:
         registration:
           kakao:
-            client-id: ${KAKAO_CLIENT_ID:}
-            client-secret: ${KAKAO_CLIENT_SECRET:}
-            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
+            client-id: ${KAKAO_CLIENT_ID:your_kakao_client_id}
+            client-secret: ${KAKAO_CLIENT_SECRET:your_kakao_client_secret}
+            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173/oauth/kakao/callback}
             authorization-grant-type: authorization_code
             scope:
               - profile_nickname
             client-name: Kakao
           naver:
-            client-id: ${NAVER_CLIENT_ID:}
-            client-secret: ${NAVER_CLIENT_SECRET:}
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-id: ${NAVER_CLIENT_ID:your_naver_client_id}
+            client-secret: ${NAVER_CLIENT_SECRET:your_naver_client_secret}
+            redirect-uri: ${NAVER_REDIRECT_URI:http://localhost:5173/oauth/naver/callback}
             authorization-grant-type: authorization_code
             scope:
               - name
@@ -63,29 +73,80 @@ spring:
             user-info-uri: https://openapi.naver.com/v1/nid/me
             user-name-attribute: response
 
+# 🟢 앱 설정
+app:
+  email:
+    enabled: true
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+# 🔵 카카오 로그인 설정 (추가 설정)
+kakao:
+  client-id: ${KAKAO_CLIENT_ID:your_kakao_client_id}
+  client-secret: ${KAKAO_CLIENT_SECRET:your_kakao_client_secret}
+  redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:5173/oauth/kakao/callback}
+
+# 🔵 네이버 로그인 설정 (추가 설정)
+naver:
+  client-id: ${NAVER_CLIENT_ID:your_naver_client_id}
+  client-secret: ${NAVER_CLIENT_SECRET:your_naver_client_secret}
+  redirect-uri: ${NAVER_REDIRECT_URI:http://localhost:5173/oauth/naver/callback}
+
+# 🔵 JWT 설정
+jwt:
+  secret: ${JWT_SECRET:your_jwt_secret_key_here_minimum_32_characters_required}
+  access-token-validity: 3600000
+  refresh-token-validity: 604800000
+
+# AES 양방향 암호화 설정 (개인정보 암호화용)
+aes:
+  secret-key: ${AES_SECRET_KEY:your_aes_secret_key_32_chars_long}
+
+# 🟢 Google Cloud Document AI 설정
+gcp:
+  enabled: true
+  project-id: ${GCP_PROJECT_ID:your_gcp_project_id}
+  location: ${GCP_LOCATION:us}
+  processor-id: ${GCP_PROCESSOR_ID:your_processor_id}
+  credentials:
+    path: classpath:service-account-key.json
+
+# 🚀 Gemini API 설정
+gemini:
+  api-key: ${GEMINI_API_KEY:your_gemini_api_key}
+  model-name: ${GEMINI_MODEL_NAME:gemini-2.0-flash-exp}
+  api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com}
+
 # 계약 API 설정
 contract:
   api:
     base-url: ${CONTRACT_API_BASE_URL:}
 
-jwt:
-  secret: ${JWT_SECRET:temporary_jwt_secret_key_for_deployment_min_32_chars}
-  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:43200000}
+# ML API 설정
+ml:
+  api:
+    base-url: ${ML_API_BASE_URL:http://localhost:8000}
+    connection-timeout: 10000
+    read-timeout: 60000
 
-# AES 양방향 암호화 설정 (개인정보 암호화용)
-aes:
-  secret-key: ${AES_SECRET_KEY:temporary_aes_key_32_chars_long}
+# Swagger 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  packages-to-scan: com.superlawva
 
+# 기본 서버 설정
 server:
   address: 0.0.0.0
   port: ${SERVER_PORT:8080}
-  # SSL 설정 임시 비활성화 (배포 후 환경변수로 활성화 가능)
-  # ssl:
-  #   enabled: true
-  #   key-store: classpath:keystore.p12
-  #   key-store-type: PKCS12
-  #   key-store-password: changeit
-  #   key-alias: superlaw
+  max-http-header-size: 64KB
+  tomcat:
+    max-swallow-size: 100MB
+    max-http-post-size: 100MB
 
 # Actuator 설정 (헬스체크용)
 management:
@@ -97,25 +158,101 @@ management:
     health:
       show-details: when-authorized
 
-# AWS 설정
-aws:
-  region: ${AWS_REGION:ap-northeast-2}
-  access-key-id: ${AWS_ACCESS_KEY_ID:}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
-  s3:
-    bucket-name: ${AWS_S3_BUCKET_NAME:superlawva-logs}
-  cloudwatch:
-    log-group-name: ${AWS_CLOUDWATCH_LOG_GROUP:superlawva-application}
-    log-stream-name: ${AWS_CLOUDWATCH_LOG_STREAM:ec2-instance}
-
-# 로깅 설정
+# 기본 로깅 설정
 logging:
   level:
-    com.superlawva.global.security.filter.JwtAuthFilter: INFO
-    org.apache.coyote.http11.Http11Processor: WARN
+    com.superlawva: DEBUG
+    com.superlawva.domain.ocr: DEBUG
+    com.superlawva.domain.ocr3: DEBUG
     org.springframework.security: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    org.springframework.mail: INFO
+    org.springframework.data.redis: INFO
+    org.hibernate.SQL: INFO
+    com.sun.mail: INFO
+
+---
+# 🟢 로컬 개발 환경 프로필 (H2 + 로컬 MongoDB)
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # 🟢 로컬 MongoDB 설정
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://admin:password@localhost:27017/superlawva_docs?authSource=admin}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+---
+# 🚀 운영 환경 프로필 (MySQL + MongoDB Atlas)
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/superlawva?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:your_db_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  # 🚀 MongoDB Atlas 설정
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/superlawva_docs}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+        ssl:
+          enabled: ${REDIS_SSL_ENABLED:false}
+
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    com.superlawva: INFO
+    org.springframework.security: WARN
+    org.springframework.data.redis: WARN
+    org.hibernate.SQL: WARN
