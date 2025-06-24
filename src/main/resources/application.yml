@@ -41,16 +41,16 @@ spring:
       client:
         registration:
           kakao:
-            client-id: ${KAKAO_CLIENT_ID:}
-            client-secret: ${KAKAO_CLIENT_SECRET:}
+            client-id: ${KAKAO_CLIENT_ID:dummy}
+            client-secret: ${KAKAO_CLIENT_SECRET:dummy}
             redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
             authorization-grant-type: authorization_code
             scope:
               - profile_nickname
             client-name: Kakao
           naver:
-            client-id: ${NAVER_CLIENT_ID:}
-            client-secret: ${NAVER_CLIENT_SECRET:}
+            client-id: ${NAVER_CLIENT_ID:dummy}
+            client-secret: ${NAVER_CLIENT_SECRET:dummy}
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
             scope:
@@ -76,7 +76,7 @@ contract:
 
 jwt:
   secret: ${JWT_SECRET:temporary_jwt_secret_key_for_deployment_min_32_chars}
-  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:43200000}
+  access-token-validity: ${JWT_ACCESS_TOKEN_VALIDITY:86400000}
 
 # AES 양방향 암호화 설정 (개인정보 암호화용)
 aes:
@@ -92,16 +92,6 @@ server:
   #   key-store-type: PKCS12
   #   key-store-password: changeit
   #   key-alias: superlaw
-
-# Actuator 설정 (헬스체크용)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: when-authorized
 
 # AWS 설정
 aws:
