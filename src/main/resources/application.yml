@@ -1,9 +1,15 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/superlawva}
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/superlawva?autocommit=false&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
+    hikari:
+      auto-commit: false
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
 
   jpa:
     hibernate:
@@ -111,11 +117,14 @@ aws:
 # 로깅 설정
 logging:
   level:
+    com.superlawva: DEBUG
     com.superlawva.global.security.filter.JwtAuthFilter: INFO
     org.apache.coyote.http11.Http11Processor: WARN
     org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.dao: DEBUG
+    org.springframework.jdbc: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

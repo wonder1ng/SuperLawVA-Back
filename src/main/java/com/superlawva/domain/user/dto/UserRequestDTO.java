@@ -27,7 +27,6 @@ public class UserRequestDTO {
 
     public User toEntity() {
         return User.builder()
-                .name(nickname)  // nickname을 name 필드에도 설정
                 .nickname(nickname)
                 .email(email)
                 .password(password)
