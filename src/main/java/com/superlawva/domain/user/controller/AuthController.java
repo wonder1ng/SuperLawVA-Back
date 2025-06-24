@@ -646,7 +646,6 @@ public class AuthController {
                     return userRepository.save(User.builder()
                             .email(email)
                             .emailHash(newEmailHash)
-                            .name(name)
                             .nickname(name)
                             .provider("NAVER")
                             .role(User.Role.USER)
@@ -659,7 +658,7 @@ public class AuthController {
         LoginResponseDTO loginResponse = LoginResponseDTO.builder()
                 .token(jwtToken)
                 .email(user.getEmail())
-                .userName(user.getName())
+                .userName(user.getNickname())
                 .provider(user.getProvider())
                 .build();
         
@@ -976,7 +975,6 @@ public class AuthController {
                         User.UserBuilder userBuilder = User.builder()
                                 .email(request.getEmail())
                                 .emailHash(newEmailHash)
-                                .name(nickname)
                                 .nickname(nickname)
                                 .provider(provider)
                                 .role(User.Role.USER)
@@ -998,7 +996,7 @@ public class AuthController {
             LoginResponseDTO loginResponse = LoginResponseDTO.builder()
                     .token(jwtToken)
                     .email(user.getEmail())
-                    .userName(user.getName())
+                    .userName(user.getNickname())
                     .provider(user.getProvider())
                     .build();
             

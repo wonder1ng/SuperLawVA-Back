@@ -64,7 +64,6 @@ public class UserServiceImpl implements UserService {
                 .email(email)
                 .emailHash(emailHash)
                 .password(hashedPassword)
-                .name(nickname)  // nickname을 name에도 설정
                 .nickname(nickname)
                 .provider("LOCAL")
                 .role(User.Role.USER)
@@ -122,7 +121,6 @@ public class UserServiceImpl implements UserService {
                     return userRepository.save(User.builder()
                             .email(kakaoLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
-                            .name(kakaoLoginRequestDTO.getNickname())
                             .nickname(kakaoLoginRequestDTO.getNickname())
                             .provider("KAKAO")
                             .role(User.Role.USER)
@@ -149,7 +147,6 @@ public class UserServiceImpl implements UserService {
                     return userRepository.save(User.builder()
                             .email(naverLoginRequestDTO.getEmail())
                             .emailHash(newEmailHash)
-                            .name(naverLoginRequestDTO.getName())
                             .nickname(naverLoginRequestDTO.getName())
                             .provider("NAVER")
                             .role(User.Role.USER)
@@ -200,7 +197,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
         
         if (request.getNickname() != null) {
-            user.changeName(request.getNickname());
+            user.changeNickname(request.getNickname());
         }
         
         userRepository.save(user);
@@ -236,7 +233,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BaseException(ErrorStatus.MEMBER_NOT_FOUND));
         
         if (dto.getNickname() != null) {
-            user.changeName(dto.getNickname());
+            user.changeNickname(dto.getNickname());
         }
         if (dto.getEmail() != null) {
             user.changeEmail(dto.getEmail());

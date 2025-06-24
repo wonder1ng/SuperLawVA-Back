@@ -4,6 +4,12 @@ spring:
     url: ${DATABASE_URL:jdbc:mysql://localhost:3306/superlawva?autocommit=false&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
+    hikari:
+      auto-commit: false
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
 
   jpa:
     hibernate:
