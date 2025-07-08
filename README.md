@@ -22,8 +22,6 @@
 - [시작하기 (Getting Started)](#시작하기-getting-started)
 - [API 문서 (API Documentation)](#api-문서-api-documentation)
 - [프로젝트 구조 (Project Structure)](#프로젝트-구조-project-structure)
-- [환경 변수 (Environment Variables)](#환경-변수-environment-variables)
-- [라이선스 (License)](#라이선스-license)
 
 ## 소개 (Introduction)
 
