@@ -2,7 +2,6 @@ package com.superlawva.global.verification.service;
 
 import com.superlawva.global.mail.MailService;
 // import com.superlawva.global.security.util.AESUtil;
-import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.exception.BaseException;
 import com.superlawva.global.response.status.ErrorStatus;
 import com.superlawva.domain.user.repository.UserRepository;
@@ -24,7 +23,6 @@ public class EmailVerificationService {
     private final RedisTemplate<String, String> redisTemplate;
     // private final AESUtil aesUtil; // AES 임시 비활성화
     private final UserRepository userRepository;
-    private final HashUtil hashUtil;
 
     @Value("${frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -112,9 +110,8 @@ public class EmailVerificationService {
 
     public void sendVerificationEmail(String email) {
         // 이미 가입된 이메일인지 확인
-        String emailHash = hashUtil.hash(email);
-        if (userRepository.existsByEmailHash(emailHash)) {
-            throw new BaseException(ErrorStatus._EMAIL_ALREADY_EXISTS);
+        if (userRepository.existsByEmail(email)) {
+            throw new BaseException(ErrorStatus.EMAIL_ALREADY_EXISTS);
         }
         sendVerification(email);
     }
@@ -124,19 +121,19 @@ public class EmailVerificationService {
         String storedCode = redisTemplate.opsForValue().get(key); // 평문으로 가져오기
 
         if (storedCode == null) {
-            throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_FOUND);
+            throw new BaseException(ErrorStatus.VERIFICATION_CODE_NOT_FOUND);
         }
 
         try {
             // AES 복호화 비활성화 - 평문 비교
             // String storedCode = aesUtil.decrypt(encryptedStoredCode);
             if (!storedCode.equals(request.getCode())) {
-                throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_MATCH);
+                throw new BaseException(ErrorStatus.VERIFICATION_CODE_NOT_MATCH);
             }
             // 인증 성공 시 Redis에서 삭제
             redisTemplate.delete(key);
         } catch (Exception e) {
-            throw new BaseException(ErrorStatus._VERIFICATION_CODE_NOT_MATCH);
+            throw new BaseException(ErrorStatus.VERIFICATION_CODE_NOT_MATCH);
         }
     }
 }

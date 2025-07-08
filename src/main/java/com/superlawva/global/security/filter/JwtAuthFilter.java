@@ -33,11 +33,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         log.debug("JwtAuthFilter 경로 체크: {}", path);
         
-        // /auth/** 경로는 JWT 검사 건너뜀 (회원가입, 로그인 등)
-        boolean shouldSkip = path.startsWith("/auth") || 
+        // 인증이 필요 없는 경로만 선택적으로 제외
+        boolean shouldSkip = path.equals("/auth/login") ||
+                           path.equals("/auth/signup") ||
+                           path.equals("/auth/social") ||
+                           path.equals("/auth/kakao") ||
+                           path.equals("/auth/naver") ||
                            path.startsWith("/actuator") ||
                            path.startsWith("/v3/api-docs") ||
-                           path.startsWith("/swagger-ui");
+                           path.startsWith("/swagger-ui") ||
+                           path.startsWith("/api/health") ||
+                           path.startsWith("/api/v1/status") ||
+                           path.startsWith("/api/upload/health") ||
+                           path.equals("/health") ||
+                           path.equals("/") ||
+                           path.startsWith("/login") ||
+                           path.startsWith("/error");
         
         if (shouldSkip) {
             log.debug("JWT 필터 건너뜀: {}", path);
@@ -59,12 +70,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String email = jwtTokenProvider.getEmail(token);
+                Long userId = jwtTokenProvider.getUserId(token);
+
+                // userId를 요청 속성에 저장하여 컨트롤러나 서비스에서 손쉽게 접근 가능
+                request.setAttribute("userId", userId);
 
                 Authentication auth = new UsernamePasswordAuthenticationToken(
                         email, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                log.debug("JWT 인증 성공: {}", email);
+                log.debug("JWT 인증 성공: {} (userId={})", email, userId);
             }
         } catch (Exception e) {
             log.warn("JWT 토큰 처리 중 오류 발생: {}", e.getMessage());

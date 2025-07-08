@@ -18,15 +18,23 @@ services:
     container_name: superlawva-app
     restart: unless-stopped
     depends_on: [redis]
-    env_file: .env
+    env_file:
+      - ./.env
     ports:
       - "8080:8080"
     networks: [app-network]
+    volumes:
+      - /home/ubuntu/gcp-key.json:/app/gcp-key.json
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
       - REDIS_HOST=redis
       - REDIS_PORT=6379 # 내부 네트워크에서는 6379 사용
-      - JAVA_OPTS=-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_SUPERLAWVA=INFO
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK=WARN
+      - LOGGING_LEVEL_ORG_HIBERNATE=WARN
+      - LOGGING_LEVEL_ORG_SQL=WARN
+      - TZ=Asia/Seoul # 시간대 설정 추가
     deploy:
       resources:
         limits:
@@ -34,11 +42,10 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
-      timeout: 30s
+      timeout: 10s
       retries: 5
-      start_period: 120s # 초기 시작까지 2분 대기
 
 volumes:
   redis_data:

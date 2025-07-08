@@ -1,45 +1,190 @@
-# SuperLawVA
+# SuperLawVA 백엔드 🏛️
 
-법률 서비스를 위한 Spring Boot 백엔드 애플리케이션
+<div align="center">
+  <img src="https://your-logo-url-here.com/logo.png" alt="SuperLawVA 로고" width="200"/>
+  
+  **AI 기반 법률 지원 서비스의 백엔드 시스템**
 
-## 🚀 배포
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=Spring%20Boot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-007396?style=flat-square&logo=Java&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=MongoDB&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=Redis&logoColor=white)
 
-- **배포 브랜치**: `back/production`
-- **배포 서버**: http://43.203.127.128:8080
-- **자동 배포**: `back/production` 브랜치에 푸시하면 GitHub Actions를 통해 자동 배포
+</div>
 
-## 📋 주요 기능
+## 📋 목차 (Table of Contents)
 
-- 사용자 인증 (JWT)
-- OAuth2 소셜 로그인 (카카오, 네이버)
-- 사용자 관리
-- 로깅 시스템
-- 이메일 인증
+- [소개 (Introduction)](#소개-introduction)
+- [시스템 아키텍처 (System Architecture)](#시스템-아키텍처-system-architecture)
+- [주요 기능 (Key Features)](#주요-기능-key-features)
+- [기술 스택 (Tech Stack)](#기술-스택-tech-stack)
+- [시작하기 (Getting Started)](#시작하기-getting-started)
+- [API 문서 (API Documentation)](#api-문서-api-documentation)
+- [프로젝트 구조 (Project Structure)](#프로젝트-구조-project-structure)
+- [환경 변수 (Environment Variables)](#환경-변수-environment-variables)
+- [라이선스 (License)](#라이선스-license)
 
-## 🛠 기술 스택
+## 소개 (Introduction)
 
-- **Backend**: Spring Boot 3.3.0, Java 17
-- **Database**: MySQL, Redis
-- **Security**: Spring Security, JWT
-- **Build**: Gradle
-- **Deploy**: Docker, GitHub Actions, AWS EC2
+SuperLawVA 백엔드는 AI 기반 법률 지원 서비스의 서버 시스템입니다. 계약서 분석, 법률 문서 생성, 법률 상담 챗봇 등 다양한 법률 서비스를 위한 API를 제공하며, 안정적이고 확장 가능한 아키텍처를 기반으로 구축되었습니다.
 
-## 🌐 API 엔드포인트
+## 시스템 아키텍처 (System Architecture)
 
-- **헬스체크**: `GET /actuator/health`
-- **회원가입**: `POST /auth/signup`
-- **로그인**: `POST /auth/login`
-- **사용자 관리**: `/users/**`
-- **로깅**: `/log/**`
+```mermaid
+graph TD
+    Client[클라이언트] --> API[API Gateway]
+    API --> Auth[인증/인가]
+    API --> Services[서비스 레이어]
+    Services --> DB[(MongoDB)]
+    Services --> Cache[(Redis)]
+    Services --> ML[ML 서비스]
+    Services --> Storage[GCP Storage]
+```
 
-## 🔧 환경 변수
+## 주요 기능 (Key Features)
 
-필요한 환경 변수들은 GitHub Secrets에 저장되어 있습니다:
+### 📄 계약서 분석 (Contract Analysis)
 
-- `DATABASE_URL`, `DB_USERNAME`, `DB_PASSWORD`
-- `JWT_SECRET`, `AES_SECRET_KEY`
-- `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`
-- `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
-- `MAIL_USERNAME`, `MAIL_PASSWORD`
+- AI 기반 계약서 자동 분석 API
+- OCR을 통한 문서 텍스트 추출
+- 계약서 위험 요소 분석 및 평가
 
-<!-- ECR 배포 테스트 -->
+### 💬 법률 상담 챗봇 (Legal Chatbot)
+
+- 실시간 법률 상담 세션 관리
+- 대화 기록 저장 및 분석
+- AI 기반 법률 조언 생성
+
+### ✍️ 법률 문서 생성 (Legal Document Generation)
+
+- 맞춤형 계약서 템플릿 생성
+- 문서 버전 관리 및 이력 추적
+- PDF 변환 및 전자서명 지원
+
+### 🔐 보안 및 인증 (Security & Authentication)
+
+- JWT 기반 사용자 인증
+- OAuth2.0 소셜 로그인
+- 암호화된 데이터 저장
+
+## 기술 스택 (Tech Stack)
+
+### Backend Framework & Language
+
+- Spring Boot 3.x
+- Java 17
+- Gradle
+
+### 데이터베이스 (Database)
+
+- MongoDB
+- Redis (캐싱 및 세션 관리)
+
+### 클라우드 및 인프라 (Cloud & Infrastructure)
+
+- Google Cloud Platform (GCP)
+- Docker
+- Docker Compose
+
+### 보안 (Security)
+
+- Spring Security
+- JWT
+- OAuth2.0
+
+### 모니터링 & 로깅 (Monitoring & Logging)
+
+- Logback
+- S3 로그 저장
+- 커스텀 로깅 시스템
+
+## 시작하기 (Getting Started)
+
+### 사전 요구사항 (Prerequisites)
+
+- Java 17 이상
+- Docker & Docker Compose
+- MongoDB
+- Redis
+
+### 설치 및 실행 (Installation & Running)
+
+1. **저장소 클론**
+
+```bash
+git clone https://github.com/SuperLawVA/back.git
+cd back
+```
+
+2. **환경 변수 설정**
+
+```bash
+cp .env.example .env
+# .env 파일을 적절히 수정
+```
+
+3. **데이터베이스 실행**
+
+```bash
+docker-compose -f docker-compose-mongodb.yml up -d
+docker-compose -f docker-compose.redis.yml up -d
+```
+
+4. **애플리케이션 빌드 및 실행**
+
+```bash
+./gradlew build
+java -jar build/libs/back-0.0.1-SNAPSHOT.jar
+```
+
+## API 문서 (API Documentation)
+
+API 문서는 Swagger UI를 통해 제공됩니다. 서버 실행 후 아래 URL에서 확인할 수 있습니다:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+## 프로젝트 구조 (Project Structure)
+
+```
+back/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── superlawva/
+│   │   │           ├── domain/         # 도메인별 패키지
+│   │   │           │   ├── alarm/      # 알람 관련
+│   │   │           │   ├── chatbot/    # 챗봇 관련
+│   │   │           │   ├── document/   # 문서 관련
+│   │   │           │   └── user/       # 사용자 관련
+│   │   │           └── global/         # 공통 설정 및 유틸
+│   │   └── resources/
+│   └── test/
+├── gradle/
+└── docker/
+```
+
+## 환경 변수 (Environment Variables)
+
+주요 환경 변수 목록:
+
+| 변수명            | 설명                | 예시                                   |
+| ----------------- | ------------------- | -------------------------------------- |
+| `MONGODB_URI`     | MongoDB 연결 문자열 | `mongodb://localhost:27017/superlawva` |
+| `REDIS_HOST`      | Redis 호스트        | `localhost`                            |
+| `JWT_SECRET`      | JWT 시크릿 키       | `your-secret-key`                      |
+| `GCP_CREDENTIALS` | GCP 인증 정보       | `path/to/credentials.json`             |
+
+자세한 환경 변수 설정은 `environment-variables.md` 파일을 참조하세요.
+
+## 라이선스 (License)
+
+이 프로젝트는 MIT 라이선스 하에 있습니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+
+---
+
+<div align="center">
+  Made with ❤️ by SuperLawVA Team
+</div>

@@ -16,7 +16,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class GeminiResponse {
     @JsonProperty("contract_data")
     private ContractData contractData;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3
     @JsonProperty("debug_mode")
     private boolean debugMode;
 }

@@ -252,3 +252,13 @@ dependency-reduced-pom.xml
 README.html
 .exercism
 github_key
+<<<<<<< HEAD
+=======
+
+# GCP
+gcp-key.json
+/gcp-credentials.json
+
+# service account key
+service-account-key.json
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3

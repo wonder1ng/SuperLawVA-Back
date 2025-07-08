@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "👤 User Management", description = "사용자 정보 조회 및 관리 (🔒인증 필요)")
+@RequiredArgsConstructor
+@Tag(name = "👤 User Management", description = "사용자 관리 API")
 public class UserController {
 
     private final UserService userService;
@@ -38,34 +38,17 @@ public class UserController {
     @Operation(
         summary = "👤 내 정보 조회 (마이페이지)", 
         description = """
-        현재 로그인한 사용자의 상세 정보를 조회합니다.
         
-        **제공 정보:**
-        - 기본 정보: ID, 이메일, 닉네임
-        - 계정 정보: 가입일, 수정일, 인증 상태
-        - 로그인 방식: LOCAL, KAKAO, NAVER
-        
-        **사용법:**
-        ```javascript
-        const response = await fetch('/users/info', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const userInfo = await response.json();
-        ```
         """
     )
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "정보 조회 성공", content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 정보를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (JWT 토큰 없음 또는 만료)")
     })
     public ApiResponse<UserResponseDTO> getMyInfo(@Parameter(hidden = true) @LoginUser User user) {
         if (user == null) {
-            throw new BaseException(ErrorStatus._UNAUTHORIZED);
+            throw new BaseException(ErrorStatus.UNAUTHORIZED);
         }
         return ApiResponse.onSuccess(userService.getMyInfo(user.getId()));
     }
@@ -95,7 +78,7 @@ public class UserController {
     })
     public ApiResponse<LoginResponseDTO> getUserDashboard(@Parameter(hidden = true) @LoginUser User user) {
         if (user == null) {
-            throw new BaseException(ErrorStatus._UNAUTHORIZED);
+            throw new BaseException(ErrorStatus.UNAUTHORIZED);
         }
         return ApiResponse.onSuccess(userService.getUserDashboard(user.getId()));
     }
@@ -132,12 +115,12 @@ public class UserController {
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "정보 수정 성공", content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 정보를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (JWT 토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 데이터 (유효성 검사 실패)")
     })
     public ApiResponse<UserResponseDTO> updateMyInfo(@Parameter(hidden = true) @LoginUser User user, @RequestBody @Valid UserRequestDTO.UpdateMyInfoDTO request) {
         if (user == null) {
-            throw new BaseException(ErrorStatus._UNAUTHORIZED);
+            throw new BaseException(ErrorStatus.UNAUTHORIZED);
         }
         return ApiResponse.onSuccess(userService.updateMyInfo(user.getId(), request));
     }
@@ -180,12 +163,11 @@ public class UserController {
     @SecurityRequirement(name = "JWT")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자 정보를 찾을 수 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자 (JWT 토큰 없음 또는 만료)")
     })
     public ApiResponse<Void> deleteMyAccount(@Parameter(hidden = true) @LoginUser User user) {
         if (user == null) {
-            throw new BaseException(ErrorStatus._UNAUTHORIZED);
+            throw new BaseException(ErrorStatus.UNAUTHORIZED);
         }
         userService.deleteMyAccount(user.getId());
         return ApiResponse.onSuccess(null);
@@ -259,6 +241,11 @@ public class UserController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @SecurityRequirement(name = "JWT")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "회원 삭제 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
+    })
     public void delete(@Parameter(description = "사용자 ID", in = ParameterIn.PATH) @PathVariable Long id) {
         userService.delete(id);
     }

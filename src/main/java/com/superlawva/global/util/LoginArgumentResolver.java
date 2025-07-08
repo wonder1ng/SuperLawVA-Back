@@ -3,7 +3,6 @@ package com.superlawva.global.util;
 import com.superlawva.domain.user.entity.User;
 import com.superlawva.domain.user.repository.UserRepository;
 import com.superlawva.global.security.annotation.LoginUser;
-import com.superlawva.global.security.util.HashUtil;
 import com.superlawva.global.security.util.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +22,6 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    private final HashUtil hashUtil;
 
     @Override
     public boolean supportsParameter(MethodParameter param) {
@@ -44,16 +42,25 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
         }
 
         String email = (String) auth.getPrincipal();
-        String emailHash = hashUtil.hash(email);
 
         // ✅ @LoginUser User
         if (param.getParameterType().equals(User.class)) {
-            return userRepository.findByEmailHash(emailHash).orElse(null);
+            return userRepository.findByEmail(email).orElse(null);
         }
 
-        // ✅ @LoginUser Long
+        // ✅ @LoginUser Long (우선 request attribute → 없으면 DB 조회)
         if (param.getParameterType().equals(Long.class)) {
-            User user = userRepository.findByEmailHash(emailHash).orElse(null);
+            Long uid = null;
+            var httpReq = webRequest.getNativeRequest(jakarta.servlet.http.HttpServletRequest.class);
+            if (httpReq != null) {
+                Object attr = httpReq.getAttribute("userId");
+                if (attr instanceof Long) {
+                    uid = (Long) attr;
+                }
+            }
+            if (uid != null) return uid;
+
+            User user = userRepository.findByEmail(email).orElse(null);
             return user != null ? user.getId() : null;
         }
 

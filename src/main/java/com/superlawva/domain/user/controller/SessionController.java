@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name = "🔐 Authentication · Session", description = "세션 관리 (토큰 검증, 로그아웃)")
+@Tag(name = "🔐 Authentication", description = "세션 관리 API")
 public class SessionController {
 
     private final UserService userService;
@@ -36,57 +36,6 @@ public class SessionController {
         summary = "🔍 JWT 토큰 유효성 검증", 
         description = """
         JWT 토큰이 유효한지 간단하게 확인합니다.
-        
-        **사용 목적:**
-        - 페이지 로드 시 로그인 상태 확인
-        - JWT 토큰 유효성 검증만 수행
-        - 간단한 true/false 응답
-        
-        **사용법:**
-        ```javascript
-        // 페이지 로드 시 로그인 상태 확인
-        const checkAuth = async () => {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                console.log('토큰 없음 - 로그인 필요');
-                return false;
-            }
-            
-            try {
-                const response = await fetch('/auth/verify', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ 로그인 상태 유효:', data.result);
-                    return data.result;
-                } else {
-                    console.log('❌ 토큰 만료 - 로그인 필요');
-                    localStorage.removeItem('access_token');
-                    return false;
-                }
-            } catch (error) {
-                console.error('토큰 검증 실패:', error);
-                return false;
-            }
-        };
-        
-        // 사용 예시
-        if (await checkAuth()) {
-            // 로그인 상태 - 페이지 로드 계속
-        } else {
-            // 로그인 필요 - 로그인 페이지로 이동
-            window.location.href = '/login';
-        }
-        ```
-        
-        **특징:**
-        - 단순히 토큰 유효성만 확인
-        - 사용자 정보는 반환하지 않음  
-        - 빠른 응답속도
         """
     )
     @SecurityRequirement(name = "JWT")
@@ -145,23 +94,7 @@ public class SessionController {
         - 액세스 토큰은 자연 만료 (보통 1-12시간)
         - 리프레시 토큰 즉시 삭제로 재발급 불가
         - 완전한 서버 측 로그아웃
-        
-        **사용법:**
-        ```javascript
-        const response = await fetch('/auth/logout', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-        }
-        ```
-        
+       
         **주의사항:**
         - 이 API는 LogoutFilter에서 처리됩니다 (이 컨트롤러 메서드는 실행되지 않음)
         - 성공 후 클라이언트에서 토큰 삭제 필수

@@ -1,11 +1,21 @@
 package com.superlawva.global.exception;
 
 import com.superlawva.global.response.status.ErrorStatus;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
- 
+
 @Getter
-@AllArgsConstructor
 public class BaseException extends RuntimeException {
-    private final ErrorStatus errorStatus;
+
+    private final ErrorStatus code;
+    private final String message;
+
+    public BaseException(ErrorStatus code) {
+        this.code = code;
+        this.message = code.getMessage();
+    }
+
+    public BaseException(ErrorStatus code, String message) {
+        this.code = code;
+        this.message = message;
+    }
 } 

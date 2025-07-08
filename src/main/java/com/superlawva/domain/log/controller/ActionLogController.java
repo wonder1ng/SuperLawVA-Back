@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Tag(name = "📊 User Action Logs", description = "사용자 행동 로그 수집 API (세션, 페이지뷰, 이벤트)")
 @RestController
 @RequestMapping("/log")
 @RequiredArgsConstructor
+@Tag(name = "📊 User Behavior Logging", description = "사용자 행동 로깅 API")
 public class ActionLogController {
 
     private final LogService logService;
@@ -30,27 +30,7 @@ public class ActionLogController {
         **사용법:**
         - **세션 시작**: `action: "start"` → 새로운 세션 생성
         - **세션 종료**: `action: "end"` → 기존 세션 종료
-        
-        **요청 예시:**
-        ```json
-        {
-            "action": "start",
-            "sessionId": null,
-            "userId": 1,
-            "ip": "192.168.1.1",
-            "userAgent": "Mozilla/5.0...",
-            "timestamp": "2025-01-20T10:30:00"
-        }
-        ```
-        
-        **응답:**
-        - **시작**: 201 Created + `{"session_id": 123}`
-        - **종료**: 204 No Content
-        
-        **활용:**
-        - 사용자 접속 시간 분석
-        - 세션 유지 시간 측정
-        - 사용자 활동 패턴 파악
+ 
         """
     )
     @PostMapping("/session")

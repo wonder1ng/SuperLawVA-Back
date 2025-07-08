@@ -27,7 +27,10 @@ repositories {
 dependencyManagement {
     imports {
         mavenBom 'com.google.cloud:libraries-bom:26.28.0'
+<<<<<<< HEAD
         mavenBom 'io.grpc:grpc-bom:1.60.0' // gRPC 버전 통일
+=======
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3
     }
 }
 
@@ -42,18 +45,27 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+<<<<<<< HEAD
+=======
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    /* ── OpenAPI Docs ──────────────────────────── */
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3
 
     implementation 'org.springframework.security:spring-security-config'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
 
+<<<<<<< HEAD
     /* ── OpenAPI Docs ──────────────────────────── */
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
+=======
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3
     /* ── JWT ───────────────────────────────────── */
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     /* ── Database ──────────────────────────────── */
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -74,11 +86,21 @@ dependencies {
     implementation 'org.apache.tika:tika-core:2.9.1'
     implementation 'io.lettuce:lettuce-core'
 
-    /* ── AWS SDK ───────────────────────────────── */
-    implementation 'software.amazon.awssdk:cloudwatchlogs:2.24.12'
+    /* ── AWS S3 ────────────────────────────────── */
     implementation 'software.amazon.awssdk:s3:2.24.12'
     implementation 'software.amazon.awssdk:sts:2.24.12'
-    implementation 'com.cwbase:logback-redis-appender:1.1.5'
+
+    /* ── GCP Document AI ────────────────────────── */
+    implementation platform('com.google.cloud:libraries-bom:26.28.0')
+    implementation 'com.google.cloud:google-cloud-document-ai'
+    implementation 'com.google.auth:google-auth-library-oauth2-http'
+    
+    /* ── Utils ─────────────────────────────────── */
+    implementation 'io.lettuce:lettuce-core'
+    implementation 'commons-io:commons-io:2.15.0'
+
+    // 🔐 암호화 (ARIA/SEED) 지원용 Bouncy Castle
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
 
     /* ── Lombok ────────────────────────────────── */
     compileOnly 'org.projectlombok:lombok:1.18.30'
@@ -89,8 +111,12 @@ dependencies {
     /* ── .env 환경변수 ─────────────────────────── */
     implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
+    /* ── MIME Type Detection ───────────────────── */
+    implementation 'org.apache.tika:tika-core:2.9.1'
+
     /* ── Test ──────────────────────────────────── */
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+<<<<<<< HEAD
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -99,9 +125,17 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+=======
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+>>>>>>> 2e0a7457de52b2c07313d113e115aa4a044a6be3
 }
 
-// ✅ JAR 빌드 설정 추가
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// ✅ JAR 빌드 설정
 jar {
     enabled = false
     archiveClassifier = ''
@@ -110,4 +144,9 @@ jar {
 bootJar {
     enabled = true
     archiveClassifier = ''
+}
+
+// bootRun 실행 시 GCP 인증 정보를 시스템 속성으로 전달
+bootRun {
+    systemProperty 'GOOGLE_APPLICATION_CREDENTIALS', file('src/main/resources/gcp-key.json').absolutePath
 }
