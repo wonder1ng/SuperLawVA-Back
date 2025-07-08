@@ -1,7 +1,7 @@
 # SuperLawVA 백엔드 🏛️
 
 <div align="center">
-  <img src="https://your-logo-url-here.com/logo.png" alt="SuperLawVA 로고" width="200"/>
+  <img src="https://github.com/wonder1ng/SuperLawVA-Front/blob/develop/public/logo.svg" alt="SuperLawVA 로고" width="200"/>
   
   **AI 기반 법률 지원 서비스의 백엔드 시스템**
 
