@@ -7,6 +7,7 @@
 
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=Spring%20Boot&logoColor=white)
 ![Java](https://img.shields.io/badge/Java-007396?style=flat-square&logo=Java&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=MySQL&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=MongoDB&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=Redis&logoColor=white)
 
@@ -35,7 +36,7 @@ graph TD
     Client[클라이언트] --> API[API Gateway]
     API --> Auth[인증/인가]
     API --> Services[서비스 레이어]
-    Services --> DB[(MongoDB)]
+    Services --> DB[(MySQL, MongoDB)]
     Services --> Cache[(Redis)]
     Services --> ML[ML 서비스]
     Services --> Storage[GCP Storage]
@@ -77,7 +78,8 @@ graph TD
 
 ### 데이터베이스 (Database)
 
-- MongoDB
+- MySQL (유저 데이터 및 기타 데이터)
+- MongoDB (조인이 많거나 null이 많은 자료: 계약서, 계약서 분석, 내용증명서)
 - Redis (캐싱 및 세션 관리)
 
 ### 클라우드 및 인프라 (Cloud & Infrastructure)
@@ -104,6 +106,7 @@ graph TD
 
 - Java 17 이상
 - Docker & Docker Compose
+- MySQL
 - MongoDB
 - Redis
 
@@ -126,6 +129,7 @@ cp .env.example .env
 3. **데이터베이스 실행**
 
 ```bash
+docker-compose -f docker-compose-mysql.yml up -d
 docker-compose -f docker-compose-mongodb.yml up -d
 docker-compose -f docker-compose.redis.yml up -d
 ```
@@ -142,7 +146,7 @@ java -jar build/libs/back-0.0.1-SNAPSHOT.jar
 API 문서는 Swagger UI를 통해 제공됩니다. 서버 실행 후 아래 URL에서 확인할 수 있습니다:
 
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ## 프로젝트 구조 (Project Structure)
@@ -165,25 +169,6 @@ back/
 ├── gradle/
 └── docker/
 ```
-
-## 환경 변수 (Environment Variables)
-
-주요 환경 변수 목록:
-
-| 변수명            | 설명                | 예시                                   |
-| ----------------- | ------------------- | -------------------------------------- |
-| `MONGODB_URI`     | MongoDB 연결 문자열 | `mongodb://localhost:27017/superlawva` |
-| `REDIS_HOST`      | Redis 호스트        | `localhost`                            |
-| `JWT_SECRET`      | JWT 시크릿 키       | `your-secret-key`                      |
-| `GCP_CREDENTIALS` | GCP 인증 정보       | `path/to/credentials.json`             |
-
-자세한 환경 변수 설정은 `environment-variables.md` 파일을 참조하세요.
-
-## 라이선스 (License)
-
-이 프로젝트는 MIT 라이선스 하에 있습니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
-
----
 
 <div align="center">
   Made with ❤️ by SuperLawVA Team
